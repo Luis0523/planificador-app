@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:provider/provider.dart';
 
 import 'config/theme.dart';
+import 'providers/auth_provider.dart';
+import 'screens/auth/cambiar_contrasena_screen.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/home/home_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,62 +19,42 @@ class PlanificadorApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Planificador de Actividades',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      home: const SplashScreen(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+      ],
+      child: MaterialApp(
+        title: 'Planificador de Actividades',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light,
+        home: const AuthGate(),
+      ),
     );
   }
 }
 
-/// Splash temporal de la Fase 0: logo + nombre de la app.
-/// Se reemplaza por la navegación real (login/home) en fases posteriores.
-class SplashScreen extends StatelessWidget {
-  const SplashScreen({super.key});
+/// Decide qué pantalla mostrar según el estado de autenticación:
+/// - Sin sesión -> login
+/// - Login con contraseña temporal -> forzar cambio de contraseña
+/// - Sesión activa -> Home
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return Scaffold(
-      backgroundColor: colors.primary,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.event_available,
-                size: 64,
-                color: AppColors.primary,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Planificador de Actividades',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Actividades condicionadas por el clima',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white70,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
+    final auth = context.watch<AuthProvider>();
+
+    switch (auth.status) {
+      case AuthStatus.desconocido:
+        return const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        );
+      case AuthStatus.noAutenticado:
+        return const LoginScreen();
+      case AuthStatus.requiereCambio:
+        return const CambiarContrasenaScreen();
+      case AuthStatus.autenticado:
+        return const HomeScreen();
+    }
   }
 }

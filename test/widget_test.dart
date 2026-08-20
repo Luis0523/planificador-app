@@ -1,13 +1,17 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:planificador_actividades/main.dart';
 
 void main() {
-  testWidgets('Splash de la Fase 0 muestra el logo y el nombre de la app',
+  testWidgets('Al iniciar sin sesión guardada muestra la pantalla de login',
       (WidgetTester tester) async {
-    await tester.pumpWidget(const PlanificadorApp());
+    FlutterSecureStorage.setMockInitialValues({});
 
-    expect(find.text('Planificador de Actividades'), findsOneWidget);
-    expect(find.text('Actividades condicionadas por el clima'), findsOneWidget);
+    await tester.pumpWidget(const PlanificadorApp());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Inicia sesión'), findsOneWidget);
+    expect(find.text('Iniciar sesión'), findsOneWidget);
   });
 }

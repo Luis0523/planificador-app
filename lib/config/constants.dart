@@ -7,6 +7,10 @@ class Constants {
   static String get apiBaseUrl =>
       dotenv.env['API_BASE_URL'] ?? 'http://localhost:3000';
 
+  /// TODO: reemplazar por backend real cuando el servidor Node esté desplegado.
+  /// Mientras tanto, auth_service.dart responde con datos simulados.
+  static const bool useMockBackend = true;
+
   // API keys
   static String get googleMapsApiKey =>
       dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
