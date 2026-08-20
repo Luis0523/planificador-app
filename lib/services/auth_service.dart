@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../config/constants.dart';
 import '../models/usuario.dart';
 import 'api_service.dart';
+import 'mock_backend.dart';
 
 class AuthException implements Exception {
   final String message;
@@ -35,17 +36,6 @@ class AuthService {
 
   final ApiService _api = ApiService.instance;
   bool get _usarMock => Constants.useMockBackend;
-
-  // TODO: reemplazar por backend real. Mock en memoria (solo para desarrollo).
-  static final List<Map<String, String>> _mockUsuarios = [
-    {
-      'nombreCompleto': 'Alumno Demo',
-      'nombreUsuario': 'demo',
-      'correo': 'demo@planificador.com',
-      'telefono': '5551234567',
-      'contrasena': '123456',
-    },
-  ];
 
   // ---- Login ----
 
@@ -141,23 +131,23 @@ class AuthService {
   // ---- Mock (TODO: reemplazar por backend real) ----
 
   LoginResult _mockLogin(String correo, String contrasena) {
-    final coincidencias =
-        _mockUsuarios.where((u) => u['correo'] == correo.trim()).toList();
-    if (coincidencias.isEmpty) {
+    final backend = MockBackend.instance;
+    final usuario = backend.buscarPorCorreo(correo);
+    if (usuario == null) {
       throw AuthException('Credenciales incorrectas');
     }
-    final usuario = coincidencias.first;
 
     // Contraseña temporal simulada: obliga a cambiar la contraseña.
     final requiere = contrasena == 'temporal123';
     if (contrasena != usuario['contrasena'] && !requiere) {
       throw AuthException('Credenciales incorrectas');
     }
+    backend.setUsuarioActualId(usuario['id']!);
 
     return LoginResult(
       token: 'mock.jwt.${DateTime.now().millisecondsSinceEpoch}',
       usuario: Usuario(
-        id: _mockUsuarios.indexOf(usuario) + 1,
+        id: int.parse(usuario['id']!),
         nombreUsuario: usuario['nombreUsuario']!,
         nombreCompleto: usuario['nombreCompleto']!,
         correo: usuario['correo']!,
@@ -175,18 +165,18 @@ class AuthService {
     required String telefono,
     required String contrasena,
   }) {
-    final existe = _mockUsuarios
-        .any((u) => u['correo'] == correo.trim() || u['nombreUsuario'] == nombreUsuario.trim());
-    if (existe) {
+    final backend = MockBackend.instance;
+    if (backend.buscarPorCorreo(correo) != null ||
+        backend.buscarPorNombreUsuario(nombreUsuario) != null) {
       throw AuthException('El correo o el nombre de usuario ya están registrados');
     }
-    _mockUsuarios.add({
-      'nombreCompleto': nombreCompleto.trim(),
-      'nombreUsuario': nombreUsuario.trim(),
-      'correo': correo.trim(),
-      'telefono': telefono.trim(),
-      'contrasena': contrasena,
-    });
+    backend.registrar(
+      nombreCompleto: nombreCompleto,
+      nombreUsuario: nombreUsuario,
+      correo: correo,
+      telefono: telefono,
+      contrasena: contrasena,
+    );
   }
 
   String _mensajeDio(DioException e) {

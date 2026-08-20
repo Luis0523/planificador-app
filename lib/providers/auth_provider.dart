@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../models/usuario.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import '../services/usuario_service.dart';
 
 enum AuthStatus { desconocido, noAutenticado, requiereCambio, autenticado }
 
@@ -12,6 +13,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   final AuthService _authService = AuthService.instance;
+  final UsuarioService _usuarioService = UsuarioService.instance;
 
   AuthStatus _status = AuthStatus.desconocido;
   Usuario? _usuario;
@@ -24,11 +26,19 @@ class AuthProvider extends ChangeNotifier {
   String? get error => _error;
   bool get autenticado => _status == AuthStatus.autenticado;
 
-  /// Al abrir la app: si hay un JWT guardado, la sesión sigue activa.
+  /// Al abrir la app: si hay un JWT guardado, la sesión sigue activa
+  /// y se carga el perfil del usuario.
   Future<void> _init() async {
     final token = await ApiService.leerToken();
-    _status =
-        (token != null && token.isNotEmpty) ? AuthStatus.autenticado : AuthStatus.noAutenticado;
+    final tieneToken = token != null && token.isNotEmpty;
+    _status = tieneToken ? AuthStatus.autenticado : AuthStatus.noAutenticado;
+    if (tieneToken) {
+      try {
+        _usuario = await _usuarioService.obtenerPerfil();
+      } catch (_) {
+        // Si falla la carga del perfil, igual se entra al Home.
+      }
+    }
     notifyListeners();
   }
 
@@ -77,6 +87,27 @@ class AuthProvider extends ChangeNotifier {
       },
     );
   }
+
+  /// Recarga el perfil del usuario desde `GET /api/users/me`.
+  Future<bool> cargarPerfil() => _ejecutar(
+        () async {
+          _usuario = await _usuarioService.obtenerPerfil();
+        },
+      );
+
+  /// Guarda nombre completo y teléfono en `PUT /api/users/me`.
+  Future<bool> actualizarPerfil({
+    required String nombreCompleto,
+    required String telefono,
+  }) =>
+      _ejecutar(
+        () async {
+          _usuario = await _usuarioService.actualizarPerfil(
+            nombreCompleto: nombreCompleto,
+            telefono: telefono,
+          );
+        },
+      );
 
   Future<void> logout() async {
     await ApiService.limpiarToken();

@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:planificador_actividades/main.dart';
+import 'package:planificador_actividades/services/mock_backend.dart';
 
 Future<void> _iniciarApp(WidgetTester tester) async {
   await tester.pumpWidget(const PlanificadorApp());
@@ -23,6 +24,7 @@ Future<void> _login(
 void main() {
   setUp(() {
     FlutterSecureStorage.setMockInitialValues({});
+    MockBackend.instance.reset();
   });
 
   testWidgets('login con credenciales demo llega al Home', (tester) async {

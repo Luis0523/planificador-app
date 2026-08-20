@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:planificador_actividades/main.dart';
+import 'package:planificador_actividades/services/mock_backend.dart';
 
 Future<void> _iniciarApp(WidgetTester tester) async {
   await tester.pumpWidget(const PlanificadorApp());
@@ -26,6 +27,7 @@ Future<void> _abrirDrawer(WidgetTester tester) async {
 void main() {
   setUp(() {
     FlutterSecureStorage.setMockInitialValues({});
+    MockBackend.instance.reset();
   });
 
   testWidgets('el dashboard saluda al usuario logueado', (tester) async {
@@ -87,7 +89,7 @@ void main() {
     await tester.tap(find.byKey(const Key('drawer_perfil')));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Fase 4'), findsOneWidget);
+    expect(find.byKey(const Key('perfil_guardar')), findsOneWidget);
 
     await tester.pageBack();
     await tester.pumpAndSettle();
