@@ -4,17 +4,28 @@ class Constants {
   Constants._();
 
   // URLs base
-  static String get apiBaseUrl =>
-      dotenv.env['API_BASE_URL'] ?? 'http://localhost:3000';
+  static String get apiBaseUrl {
+    final url = _env('API_BASE_URL');
+    return url.isEmpty ? 'http://localhost:3000' : url;
+  }
 
   /// TODO: reemplazar por backend real cuando el servidor Node esté desplegado.
   /// Mientras tanto, auth_service.dart responde con datos simulados.
   static const bool useMockBackend = true;
 
   // API keys
-  static String get googleMapsApiKey =>
-      dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
-  static String get weatherApiKey => dotenv.env['WEATHER_API_KEY'] ?? '';
+  static String get googleMapsApiKey => _env('GOOGLE_MAPS_API_KEY');
+  static String get weatherApiKey => _env('WEATHER_API_KEY');
+
+  /// Lee una variable de entorno sin lanzar si dotenv no se inicializó
+  /// (p. ej. en tests, donde no se llama a `dotenv.load`).
+  static String _env(String key) {
+    try {
+      return dotenv.env[key] ?? '';
+    } catch (_) {
+      return '';
+    }
+  }
 
   // Backend: rutas de auth y perfil
   static const String authRegister = '/api/auth/register';

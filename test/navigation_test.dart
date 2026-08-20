@@ -67,7 +67,7 @@ void main() {
     await tester.tap(find.byKey(const Key('nav_ubicaciones')));
     await tester.pumpAndSettle();
     expect(find.text('Mis ubicaciones'), findsOneWidget);
-    expect(find.textContaining('Fase 5'), findsOneWidget);
+    expect(find.byKey(const Key('btn_nueva_ubicacion')), findsOneWidget);
 
     // Pendientes
     await tester.tap(find.byKey(const Key('nav_pendientes')));

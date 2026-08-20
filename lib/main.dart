@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'config/theme.dart';
 import 'providers/auth_provider.dart';
+import 'providers/ubicaciones_provider.dart';
 import 'screens/auth/cambiar_contrasena_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/home/home_screen.dart';
@@ -22,6 +23,7 @@ class PlanificadorApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => UbicacionesProvider()),
       ],
       child: MaterialApp(
         title: 'Planazo',

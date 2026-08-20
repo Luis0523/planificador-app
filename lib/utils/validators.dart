@@ -55,3 +55,17 @@ String? validarNombreUsuario(String? value) {
   }
   return null;
 }
+
+String? validarLatitud(String? value) {
+  final valor = double.tryParse(value?.trim() ?? '');
+  if (valor == null) return 'Ingresa una latitud válida';
+  if (valor < -90 || valor > 90) return 'La latitud va de -90 a 90';
+  return null;
+}
+
+String? validarLongitud(String? value) {
+  final valor = double.tryParse(value?.trim() ?? '');
+  if (valor == null) return 'Ingresa una longitud válida';
+  if (valor < -180 || valor > 180) return 'La longitud va de -180 a 180';
+  return null;
+}

@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/ubicaciones_provider.dart';
 import '../../widgets/app_drawer.dart';
 import '../actividades/listado_actividades_screen.dart';
+import '../ubicaciones/listado_ubicaciones_screen.dart';
 import '../usuario/perfil_screen.dart';
 
 /// Home de Planazo (Fase 3): header + dashboard + navegación (drawer y bottom nav).
@@ -22,6 +24,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _indice = _indiceInicio;
+
+  @override
+  void initState() {
+    super.initState();
+    // Carga los datos locales (ubicaciones) después del primer frame
+    // para que el dashboard y la pestaña de ubicaciones tengan datos.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final usuario = context.read<AuthProvider>().usuario;
+      if (usuario != null) {
+        context.read<UbicacionesProvider>().cargar(usuario.id);
+      }
+    });
+  }
 
   String get _seccionActual => switch (_indice) {
         _indiceUbicaciones => AppSecciones.ubicaciones,
@@ -77,12 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           Expanded(
             child: switch (_indice) {
-              _indiceUbicaciones => const _ModuloPlaceholder(
-                  icono: Icons.location_on_outlined,
-                  titulo: 'Mis ubicaciones',
-                  mensaje: 'Aquí podrás guardar y gestionar tus ubicaciones '
-                      'con GPS y mapas. (Fase 5)',
-                ),
+              _indiceUbicaciones => const ListadoUbicacionesScreen(),
               _indicePendientes => const _ModuloPlaceholder(
                   icono: Icons.pending_actions_outlined,
                   titulo: 'Actividades pendientes',
@@ -181,6 +192,7 @@ class _DashboardInicio extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final ubicaciones = context.watch<UbicacionesProvider>().ubicaciones;
     final nombre =
         auth.usuario?.nombreCompleto.split(' ').first ?? 'Planazero';
 
@@ -201,9 +213,9 @@ class _DashboardInicio extends StatelessWidget {
                 ),
           ),
           const SizedBox(height: 24),
-          const Row(
+          Row(
             children: [
-              Expanded(
+              const Expanded(
                 child: _BentoCard(
                   color: PlanazoColors.primaryContainer,
                   icono: Icons.calendar_month,
@@ -212,14 +224,14 @@ class _DashboardInicio extends StatelessWidget {
                   conteo: 0, // TODO(Fase 6): desde la BD
                 ),
               ),
-              SizedBox(width: 16),
+              const SizedBox(width: 16),
               Expanded(
                 child: _BentoCard(
                   color: PlanazoColors.secondaryContainer,
                   icono: Icons.location_on,
                   iconoColor: PlanazoColors.onSecondaryContainer,
                   titulo: 'Ubicaciones guardadas',
-                  conteo: 0, // TODO(Fase 5): desde la BD
+                  conteo: ubicaciones.length,
                 ),
               ),
             ],
