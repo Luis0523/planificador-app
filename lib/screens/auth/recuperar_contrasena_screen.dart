@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../utils/validators.dart';
+import '../../config/theme.dart';
 
 class RecuperarContrasenaScreen extends StatefulWidget {
   const RecuperarContrasenaScreen({super.key});
@@ -64,8 +65,17 @@ class _RecuperarContrasenaScreenState extends State<RecuperarContrasenaScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(Icons.lock_reset, size: 64, color: Colors.grey),
-                const SizedBox(height: 16),
+                const Icon(Icons.lock_reset, size: 64, color: PlanazoColors.primary),
+                const SizedBox(height: 12),
+                Text(
+                  'Planazo',
+                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                        color: PlanazoColors.primary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
                 Text(
                   'Ingresa tu correo y te enviaremos las instrucciones '
                   'para restablecer tu contraseña.',

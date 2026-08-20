@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../utils/validators.dart';
+import '../../config/theme.dart';
 
 class RegistroScreen extends StatefulWidget {
   const RegistroScreen({super.key});
@@ -76,6 +77,21 @@ class _RegistroScreenState extends State<RegistroScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                Text(
+                  'Planazo',
+                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                        color: PlanazoColors.primary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Únete y empieza a organizar momentos inolvidables.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: PlanazoColors.onSurfaceVariant,
+                      ),
+                ),
+                const SizedBox(height: 24),
                 TextFormField(
                   key: const Key('registro_nombre_completo'),
                   controller: _nombreCompletoCtrl,

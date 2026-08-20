@@ -65,6 +65,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const _AuthLogo(),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Planazo',
+                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                          color: PlanazoColors.primary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     'Inicia sesión',
@@ -146,7 +155,7 @@ class _AuthLogo extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       alignment: Alignment.center,
       decoration: const BoxDecoration(
-        color: AppColors.primary,
+        color: PlanazoColors.primary,
         shape: BoxShape.circle,
       ),
       child: const Icon(Icons.event_available, size: 48, color: Colors.white),

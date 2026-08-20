@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../utils/validators.dart';
+import '../../config/theme.dart';
 
 class CambiarContrasenaScreen extends StatefulWidget {
   const CambiarContrasenaScreen({super.key});
@@ -50,8 +51,17 @@ class _CambiarContrasenaScreenState extends State<CambiarContrasenaScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(Icons.password, size: 64, color: Colors.grey),
-                const SizedBox(height: 16),
+                const Icon(Icons.password, size: 64, color: PlanazoColors.primary),
+                const SizedBox(height: 12),
+                Text(
+                  'Planazo',
+                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                        color: PlanazoColors.primary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
                 Text(
                   'Debes cambiar tu contraseña temporal antes de continuar.',
                   style: Theme.of(context).textTheme.bodyMedium,

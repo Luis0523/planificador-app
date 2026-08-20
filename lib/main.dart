@@ -24,7 +24,7 @@ class PlanificadorApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
       ],
       child: MaterialApp(
-        title: 'Planificador de Actividades',
+        title: 'Planazo',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
         home: const AuthGate(),

@@ -30,7 +30,7 @@ void main() {
 
     await _login(tester);
 
-    expect(find.text('Módulos próximamente'), findsOneWidget);
+    expect(find.text('¿Qué planazo armamos hoy?'), findsOneWidget);
   });
 
   testWidgets('login con contraseña temporal fuerza el cambio de contraseña',
@@ -52,7 +52,7 @@ void main() {
     await tester.enterText(find.byKey(const Key('confirmar_contrasena')), 'nueva123');
     await tester.tap(find.text('Guardar'));
     await tester.pumpAndSettle();
-    expect(find.text('Módulos próximamente'), findsOneWidget);
+    expect(find.text('¿Qué planazo armamos hoy?'), findsOneWidget);
   });
 
   testWidgets('campos vacíos en login muestran validación', (tester) async {
@@ -86,6 +86,7 @@ void main() {
     await tester.enterText(find.byKey(const Key('registro_telefono')), '5550001111');
     await tester.enterText(find.byKey(const Key('registro_contrasena')), 'secreta1');
     await tester.enterText(find.byKey(const Key('registro_confirmar')), 'secreta1');
+    await tester.ensureVisible(find.text('Crear cuenta'));
     await tester.tap(find.text('Crear cuenta'));
     await tester.pumpAndSettle();
 
@@ -93,13 +94,17 @@ void main() {
     expect(find.text('Cuenta creada. Ahora puedes iniciar sesión.'), findsOneWidget);
   });
 
-  testWidgets('logout regresa a login y no conserva sesión', (tester) async {
+  testWidgets('logout desde el drawer regresa a login y no conserva sesión',
+      (tester) async {
     await _iniciarApp(tester);
     await _login(tester);
 
-    expect(find.text('Módulos próximamente'), findsOneWidget);
+    expect(find.text('¿Qué planazo armamos hoy?'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('boton_logout')));
+    // Abre el drawer y cierra sesión.
+    await tester.tap(find.byIcon(Icons.menu));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('drawer_cerrar_sesion')));
     await tester.pumpAndSettle();
 
     expect(find.text('Inicia sesión'), findsOneWidget);
