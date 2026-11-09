@@ -9,9 +9,13 @@ class Constants {
     return url.isEmpty ? 'http://localhost:3000' : url;
   }
 
-  /// TODO: reemplazar por backend real cuando el servidor Node esté desplegado.
-  /// Mientras tanto, auth_service.dart responde con datos simulados.
-  static const bool useMockBackend = true;
+  /// Controla si auth/usuario usan datos simulados o el backend real.
+  /// En el app real se define `USE_MOCK_BACKEND=false` en el .env.
+  /// En tests (dotenv no cargado) el valor por defecto es true → mock.
+  static bool get useMockBackend {
+    final flag = _env('USE_MOCK_BACKEND').toLowerCase();
+    return flag.isEmpty ? true : flag == 'true';
+  }
 
   // API keys
   static String get googleMapsApiKey => _env('GOOGLE_MAPS_API_KEY');
@@ -36,7 +40,8 @@ class Constants {
 
   // SQLite: nombre y version de la base
   static const String dbName = 'planificador.db';
-  static const int dbVersion = 1;
+  // v2: id_usuario pasa a TEXT (el backend usa UUID string como idUsuario).
+  static const int dbVersion = 2;
 
   // SQLite: nombres de tablas
   static const String tableUbicaciones = 'ubicaciones';
@@ -54,6 +59,7 @@ class Constants {
   static const String tipoAireLibre = 'aire_libre';
   static const String tipoInterior = 'interior';
 
-  // Clave para guardar el JWT en flutter_secure_storage
+  // Claves para guardar la sesión en flutter_secure_storage
   static const String storageKeyJwt = 'jwt_token';
+  static const String storageKeyCambioContrasena = 'requiere_cambio_contrasena';
 }

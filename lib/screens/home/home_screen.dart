@@ -2,14 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../config/theme.dart';
+import '../../providers/actividades_pendientes_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/ubicaciones_provider.dart';
+import '../../utils/date_helpers.dart';
 import '../../widgets/app_drawer.dart';
+import '../actividades/formulario_actividad_screen.dart';
 import '../actividades/listado_actividades_screen.dart';
+import '../actividades_pendientes/actividades_pendientes_screen.dart';
 import '../ubicaciones/listado_ubicaciones_screen.dart';
 import '../usuario/perfil_screen.dart';
 
-/// Home de Planazo (Fase 3): header + dashboard + navegación (drawer y bottom nav).
+/// Pantalla principal: menú lateral, barra inferior y las cuatro secciones.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -18,54 +22,56 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  static const int _indiceInicio = 0;
-  static const int _indiceUbicaciones = 1;
-  static const int _indicePendientes = 2;
-
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  int _indice = _indiceInicio;
+  int _indice = 0;
 
   @override
   void initState() {
     super.initState();
-    // Carga los datos locales (ubicaciones) después del primer frame
-    // para que el dashboard y la pestaña de ubicaciones tengan datos.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final usuario = context.read<AuthProvider>().usuario;
-      if (usuario != null) {
-        context.read<UbicacionesProvider>().cargar(usuario.id);
-      }
-    });
+    // Espera el primer frame para no notificar providers durante el build.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _recargar());
   }
 
-  String get _seccionActual => switch (_indice) {
-        _indiceUbicaciones => AppSecciones.ubicaciones,
-        _indicePendientes => AppSecciones.pendientes,
-        _ => AppSecciones.inicio,
-      };
+  /// Vuelve a leer de SQLite y del clima. Se usa al iniciar, al cambiar de
+  /// pestaña y después de crear una actividad.
+  Future<void> _recargar() async {
+    final usuario = context.read<AuthProvider>().usuario;
+    if (usuario == null) return;
+    await Future.wait([
+      context.read<UbicacionesProvider>().cargar(usuario.id),
+      context.read<ActividadesPendientesProvider>().cargar(usuario.id),
+    ]);
+  }
 
   void _cambiarIndice(int indice) {
     setState(() => _indice = indice);
+    if (indice == 0 || indice == 2) _recargar();
   }
 
   void _seleccionarSeccion(String seccion) {
     Navigator.of(context).pop(); // cierra el drawer
     switch (seccion) {
       case AppSecciones.inicio:
-        _cambiarIndice(_indiceInicio);
-      case AppSecciones.ubicaciones:
-        _cambiarIndice(_indiceUbicaciones);
-      case AppSecciones.pendientes:
-        _cambiarIndice(_indicePendientes);
+        _cambiarIndice(0);
       case AppSecciones.actividades:
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const ListadoActividadesScreen()),
-        );
+        _cambiarIndice(1);
+      case AppSecciones.pendientes:
+        _cambiarIndice(2);
+      case AppSecciones.ubicaciones:
+        _cambiarIndice(3);
       case AppSecciones.perfil:
         Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => const PerfilScreen()),
         );
+    }
+  }
+
+  Future<void> _abrirNuevaActividad() async {
+    final creada = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => const FormularioActividadScreen()),
+    );
+    if (creada == true && mounted) {
+      await _recargar();
+      _cambiarIndice(1);
     }
   }
 
@@ -74,132 +80,104 @@ class _HomeScreenState extends State<HomeScreen> {
     context.read<AuthProvider>().logout();
   }
 
+  String get _seccionActual => switch (_indice) {
+        1 => AppSecciones.actividades,
+        2 => AppSecciones.pendientes,
+        3 => AppSecciones.ubicaciones,
+        _ => AppSecciones.inicio,
+      };
+
   @override
   Widget build(BuildContext context) {
-    final titulos = const ['Inicio', 'Ubicaciones', 'Pendientes'];
+    final mostrarFab = _indice == 0 || _indice == 1;
 
     return Scaffold(
-      key: _scaffoldKey,
       drawer: AppDrawer(
         seccionActual: _seccionActual,
         onSeleccionar: _seleccionarSeccion,
         onCerrarSesion: _cerrarSesion,
       ),
-      body: Column(
+      appBar: AppBar(
+        title: Row(
+          children: [
+            const CircleAvatar(
+              radius: 14,
+              backgroundColor: PlanazoColors.primary,
+              child: Icon(
+                Icons.event_available,
+                size: 16,
+                color: PlanazoColors.onPrimary,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Planazo',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
+          ],
+        ),
+      ),
+      body: IndexedStack(
+        index: _indice,
         children: [
-          _PlanazoHeader(
-            titulo: titulos[_indice],
-            onAbrirMenu: () => _scaffoldKey.currentState?.openDrawer(),
+          _DashboardInicio(onCrear: _abrirNuevaActividad, onRefrescar: _recargar),
+          const ListadoActividadesScreen(),
+          const ActividadesPendientesScreen(),
+          const ListadoUbicacionesScreen(),
+        ],
+      ),
+      floatingActionButton: mostrarFab
+          ? FloatingActionButton(
+              key: const Key('fab_nueva_actividad'),
+              tooltip: 'Nueva actividad',
+              onPressed: _abrirNuevaActividad,
+              child: const Icon(Icons.add),
+            )
+          : null,
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _indice == 3 ? 0 : _indice,
+        onTap: _cambiarIndice,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home, key: Key('nav_inicio')),
+            label: 'Inicio',
           ),
-          Expanded(
-            child: switch (_indice) {
-              _indiceUbicaciones => const ListadoUbicacionesScreen(),
-              _indicePendientes => const _ModuloPlaceholder(
-                  icono: Icons.pending_actions_outlined,
-                  titulo: 'Actividades pendientes',
-                  mensaje: 'Aquí verás tus actividades próximas con el clima '
-                      'real y su probabilidad de realización. (Fase 7)',
-                ),
-              _ => const _DashboardInicio(),
-            },
+          BottomNavigationBarItem(
+            icon: Icon(Icons.celebration_outlined, key: Key('nav_actividades')),
+            label: 'Actividades',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.pending_actions, key: Key('nav_pendientes')),
+            label: 'Pendientes',
           ),
         ],
       ),
-      bottomNavigationBar: _BottomNav(
-        indice: _indice,
-        onChanged: _cambiarIndice,
-      ),
     );
   }
 }
 
-// ---------------------------------------------------------------------------
-// Header
-// ---------------------------------------------------------------------------
-
-class _PlanazoHeader extends StatelessWidget {
-  const _PlanazoHeader({required this.titulo, required this.onAbrirMenu});
-
-  final String titulo;
-  final VoidCallback onAbrirMenu;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: PlanazoColors.surface,
-      elevation: 1,
-      shadowColor: Colors.black.withValues(alpha: 0.04),
-      child: SafeArea(
-        bottom: false,
-        child: SizedBox(
-          height: 64,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Row(
-              children: [
-                IconButton(
-                  tooltip: 'Menú',
-                  onPressed: onAbrirMenu,
-                  icon: const Icon(Icons.menu),
-                  color: PlanazoColors.onSurface,
-                ),
-                const SizedBox(width: 4),
-                const CircleAvatar(
-                  radius: 16,
-                  backgroundColor: PlanazoColors.primaryContainer,
-                  child: Icon(
-                    Icons.event_available,
-                    size: 18,
-                    color: PlanazoColors.onPrimaryContainer,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Planazo',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                ),
-                const Spacer(),
-                Text(
-                  titulo,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: PlanazoColors.onSurfaceVariant,
-                      ),
-                ),
-                const SizedBox(width: 12),
-                const CircleAvatar(
-                  radius: 16,
-                  backgroundColor: PlanazoColors.primary,
-                  child: Icon(Icons.person, size: 18, color: PlanazoColors.onPrimary),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Dashboard (tab Inicio)
-// ---------------------------------------------------------------------------
-
+/// Resumen inicial: saludo, contadores y las próximas actividades.
 class _DashboardInicio extends StatelessWidget {
-  const _DashboardInicio();
+  const _DashboardInicio({required this.onCrear, required this.onRefrescar});
+
+  final VoidCallback onCrear;
+  final Future<void> Function() onRefrescar;
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final ubicaciones = context.watch<UbicacionesProvider>().ubicaciones;
+    final pendientes = context.watch<ActividadesPendientesProvider>().items;
     final nombre =
         auth.usuario?.nombreCompleto.split(' ').first ?? 'Planazero';
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return RefreshIndicator(
+      onRefresh: onRefrescar,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(24),
         children: [
           Text(
             'Hola, $nombre 👋',
@@ -215,49 +193,85 @@ class _DashboardInicio extends StatelessWidget {
           const SizedBox(height: 24),
           Row(
             children: [
-              const Expanded(
-                child: _BentoCard(
-                  color: PlanazoColors.primaryContainer,
+              Expanded(
+                child: _TarjetaResumen(
                   icono: Icons.calendar_month,
-                  iconoColor: PlanazoColors.onPrimaryContainer,
                   titulo: 'Próximas actividades',
-                  conteo: 0, // TODO(Fase 6): desde la BD
+                  conteo: pendientes.length,
+                  color: PlanazoColors.primaryContainer,
+                  colorIcono: PlanazoColors.onPrimaryContainer,
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: _BentoCard(
-                  color: PlanazoColors.secondaryContainer,
+                child: _TarjetaResumen(
                   icono: Icons.location_on,
-                  iconoColor: PlanazoColors.onSecondaryContainer,
                   titulo: 'Ubicaciones guardadas',
                   conteo: ubicaciones.length,
+                  color: PlanazoColors.secondaryContainer,
+                  colorIcono: PlanazoColors.onSecondaryContainer,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 24),
-          const _EstadoVacio(),
+          if (pendientes.isEmpty)
+            _EstadoVacio(onCrear: onCrear)
+          else ...[
+            Text(
+              'Lo que viene',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            for (final item in pendientes.take(3))
+              Card(
+                margin: const EdgeInsets.only(bottom: 10),
+                child: ListTile(
+                  leading: Icon(
+                    item.probabilidad.icono,
+                    color: item.probabilidad.color,
+                  ),
+                  title: Text(item.actividad.descripcion),
+                  subtitle: Text(
+                    '${formatearFechaLegible(DateTime.parse(item.actividad.fecha))}'
+                    ' · ${item.actividad.horaInicio} · ${item.ubicacion.nombre}',
+                  ),
+                  trailing: Text(
+                    '${item.probabilidad.etiquetaCorta} '
+                    '${item.probabilidad.porcentaje}%',
+                    style: TextStyle(
+                      color: item.probabilidad.color,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            const SizedBox(height: 8),
+            OutlinedButton(
+              onPressed: onCrear,
+              child: const Text('Crear planazo'),
+            ),
+          ],
         ],
       ),
     );
   }
 }
 
-class _BentoCard extends StatelessWidget {
-  const _BentoCard({
-    required this.color,
+class _TarjetaResumen extends StatelessWidget {
+  const _TarjetaResumen({
     required this.icono,
-    required this.iconoColor,
     required this.titulo,
     required this.conteo,
+    required this.color,
+    required this.colorIcono,
   });
 
-  final Color color;
   final IconData icono;
-  final Color iconoColor;
   final String titulo;
   final int conteo;
+  final Color color;
+  final Color colorIcono;
 
   @override
   Widget build(BuildContext context) {
@@ -266,50 +280,25 @@ class _BentoCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(PlanazoColors.radiusXl),
-        boxShadow: const [
-          BoxShadow(
-            color: PlanazoColors.cardShadow,
-            blurRadius: 12,
-            offset: Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: iconoColor.withValues(alpha: 0.10),
-            child: Icon(icono, color: iconoColor, size: 20),
-          ),
+          Icon(icono, color: colorIcono),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  titulo,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: iconoColor,
-                      ),
+          Text(
+            titulo,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: colorIcono,
                 ),
-              ),
-              Container(
-                width: 24,
-                height: 24,
-                alignment: Alignment.center,
-                decoration: const BoxDecoration(
-                  color: PlanazoColors.tertiaryContainer,
-                  shape: BoxShape.circle,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '$conteo',
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: colorIcono,
+                  fontWeight: FontWeight.w800,
                 ),
-                child: Text(
-                  '$conteo',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: PlanazoColors.onTertiaryContainer,
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-              ),
-            ],
           ),
         ],
       ),
@@ -318,12 +307,13 @@ class _BentoCard extends StatelessWidget {
 }
 
 class _EstadoVacio extends StatelessWidget {
-  const _EstadoVacio();
+  const _EstadoVacio({required this.onCrear});
+
+  final VoidCallback onCrear;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
       decoration: BoxDecoration(
         color: PlanazoColors.surfaceContainer,
@@ -331,14 +321,10 @@ class _EstadoVacio extends StatelessWidget {
       ),
       child: Column(
         children: [
-          CircleAvatar(
-            radius: 32,
-            backgroundColor: PlanazoColors.surfaceContainerHigh,
-            child: const Icon(
-              Icons.cruelty_free,
-              size: 32,
-              color: PlanazoColors.outline,
-            ),
+          const Icon(
+            Icons.event_available,
+            size: 48,
+            color: PlanazoColors.outline,
           ),
           const SizedBox(height: 12),
           Text(
@@ -348,7 +334,7 @@ class _EstadoVacio extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'No tienes planes para este finde. ¡Es momento de inventar algo!',
+            'No tienes actividades próximas. ¡Crea la primera!',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: PlanazoColors.onSurfaceVariant,
                 ),
@@ -356,166 +342,10 @@ class _EstadoVacio extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Crear planazo estará disponible en la Fase 6.'),
-                ),
-              );
-            },
+            onPressed: onCrear,
             child: const Text('Crear planazo'),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Placeholder de módulos sin construir todavía
-// ---------------------------------------------------------------------------
-
-class _ModuloPlaceholder extends StatelessWidget {
-  const _ModuloPlaceholder({
-    required this.icono,
-    required this.titulo,
-    required this.mensaje,
-  });
-
-  final IconData icono;
-  final String titulo;
-  final String mensaje;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircleAvatar(
-              radius: 40,
-              backgroundColor: PlanazoColors.primaryContainer,
-              child: Icon(icono, size: 40, color: PlanazoColors.onPrimaryContainer),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              titulo,
-              style: Theme.of(context).textTheme.headlineMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              mensaje,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: PlanazoColors.onSurfaceVariant,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Navegación inferior
-// ---------------------------------------------------------------------------
-
-class _BottomNav extends StatelessWidget {
-  const _BottomNav({required this.indice, required this.onChanged});
-
-  final int indice;
-  final ValueChanged<int> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: PlanazoColors.surface,
-      elevation: 1,
-      shadowColor: Colors.black.withValues(alpha: 0.04),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 80,
-          child: Row(
-            children: [
-              _ItemNav(
-                key: const Key('nav_inicio'),
-                icono: Icons.home,
-                etiqueta: 'Home',
-                activo: indice == 0,
-                onTap: () => onChanged(0),
-              ),
-              _ItemNav(
-                key: const Key('nav_ubicaciones'),
-                icono: Icons.location_on,
-                etiqueta: 'Locations',
-                activo: indice == 1,
-                onTap: () => onChanged(1),
-              ),
-              _ItemNav(
-                key: const Key('nav_pendientes'),
-                icono: Icons.pending_actions,
-                etiqueta: 'Pending',
-                activo: indice == 2,
-                onTap: () => onChanged(2),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ItemNav extends StatelessWidget {
-  const _ItemNav({
-    super.key,
-    required this.icono,
-    required this.etiqueta,
-    required this.activo,
-    required this.onTap,
-  });
-
-  final IconData icono;
-  final String etiqueta;
-  final bool activo;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = activo ? PlanazoColors.secondary : PlanazoColors.onSurfaceVariant;
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(PlanazoColors.radiusLg),
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          decoration: BoxDecoration(
-            color: activo
-                ? PlanazoColors.primaryContainer.withValues(alpha: 0.25)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(PlanazoColors.radiusLg),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icono, color: color, size: 24),
-              const SizedBox(height: 2),
-              Text(
-                etiqueta,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: color,
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

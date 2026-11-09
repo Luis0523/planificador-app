@@ -26,18 +26,26 @@ class AuthProvider extends ChangeNotifier {
   String? get error => _error;
   bool get autenticado => _status == AuthStatus.autenticado;
 
-  /// Al abrir la app: si hay un JWT guardado, la sesión sigue activa
-  /// y se carga el perfil del usuario.
+  /// Al abrir la app se valida el token guardado contra el backend.
+  /// Si el token ya no sirve, se borra la sesión y se vuelve al login.
   Future<void> _init() async {
     final token = await ApiService.leerToken();
-    final tieneToken = token != null && token.isNotEmpty;
-    _status = tieneToken ? AuthStatus.autenticado : AuthStatus.noAutenticado;
-    if (tieneToken) {
-      try {
-        _usuario = await _usuarioService.obtenerPerfil();
-      } catch (_) {
-        // Si falla la carga del perfil, igual se entra al Home.
-      }
+    if (token == null || token.isEmpty) {
+      _status = AuthStatus.noAutenticado;
+      notifyListeners();
+      return;
+    }
+
+    try {
+      _usuario = await _usuarioService.obtenerPerfil();
+      final requiereCambio = await ApiService.leerRequiereCambio();
+      _status = requiereCambio
+          ? AuthStatus.requiereCambio
+          : AuthStatus.autenticado;
+    } catch (_) {
+      await ApiService.limpiarSesion();
+      _usuario = null;
+      _status = AuthStatus.noAutenticado;
     }
     notifyListeners();
   }
@@ -46,6 +54,9 @@ class AuthProvider extends ChangeNotifier {
         () async {
           final res = await _authService.login(correo, contrasena);
           await ApiService.guardarToken(res.token);
+          await ApiService.guardarRequiereCambio(
+            res.requiereCambioContrasena,
+          );
           _usuario = res.usuario;
           _status = res.requiereCambioContrasena
               ? AuthStatus.requiereCambio
@@ -82,7 +93,8 @@ class AuthProvider extends ChangeNotifier {
     }
     return _ejecutar(
       () async {
-        await _authService.changePassword(nueva);
+        await _authService.changePassword(nueva, confirmacion);
+        await ApiService.guardarRequiereCambio(false);
         _status = AuthStatus.autenticado;
       },
     );
@@ -110,7 +122,7 @@ class AuthProvider extends ChangeNotifier {
       );
 
   Future<void> logout() async {
-    await ApiService.limpiarToken();
+    await ApiService.limpiarSesion();
     _usuario = null;
     _error = null;
     _status = AuthStatus.noAutenticado;

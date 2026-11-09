@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Secuencia de Autenticación y Persistencia de Sesión",
+    "output": "auth-flow.sequence.html",
+    "viewBox": [860, 740],
+    "animation": "trace",
+    "column_fit": "spread",
+    "quality_profile": "showcase",
+    "views": [
+      { "id": "login-request", "label": "Solicitud y validación", "focus": ["user", "ui", "provider", "service", "backend"], "note": "Envío de credenciales y validación con el backend." },
+      { "id": "token-storage", "label": "Almacenamiento seguro", "focus": ["service", "storage", "db"], "note": "Persistencia de credenciales JWT en almacenamiento seguro y sincronización local." },
+      { "id": "state-and-nav", "label": "Notificación y navegación", "focus": ["provider", "ui", "user"], "note": "Actualización reactiva del estado y transición al HomeScreen." }
+    ]
+  },
+  "participants": [
+    { "id": "user", "type": "external", "label": "Usuario", "sublabel": "Interacción" },
+    { "id": "ui", "type": "frontend", "label": "LoginScreen", "sublabel": "Flutter UI" },
+    { "id": "provider", "type": "frontend", "label": "AuthProvider", "sublabel": "Gestor de Estado" },
+    { "id": "service", "type": "backend", "label": "AuthService", "sublabel": "Servicio de Dominio" },
+    { "id": "backend", "type": "cloud", "label": "MockBackend", "sublabel": "API REST" },
+    { "id": "storage", "type": "security", "label": "SecureStorage", "sublabel": "Cifrado seguro" },
+    { "id": "db", "type": "database", "label": "SQLite DB", "sublabel": "DatabaseHelper" }
+  ],
+  "segments": [
+    { "from": 150, "to": 355, "label": "1. Validación de Credenciales" },
+    { "from": 370, "to": 530, "label": "2. Token & Persistencia Local" },
+    { "from": 545, "to": 655, "label": "3. Notificación & Navegación" }
+  ],
+  "messages": [
+    { "id": "submit-form", "from": "user", "to": "ui", "y": 180, "label": "Ingresa credenciales", "variant": "default" },
+    { "id": "call-provider", "from": "ui", "to": "provider", "y": 222, "label": "login(email, pass)", "variant": "emphasis" },
+    { "id": "call-service", "from": "provider", "to": "service", "y": 264, "label": "autenticarUsuario()", "variant": "default" },
+    { "id": "post-backend", "from": "service", "to": "backend", "y": 306, "label": "POST /api/auth/login", "variant": "emphasis" },
+    { "id": "res-backend", "from": "backend", "to": "service", "y": 346, "label": "200 OK (JWT Token + User)", "variant": "return" },
+    { "id": "save-jwt", "from": "service", "to": "storage", "y": 392, "label": "write(key: 'jwt_token')", "variant": "security" },
+    { "id": "res-jwt", "from": "storage", "to": "service", "y": 430, "label": "Token guardado", "variant": "return" },
+    { "id": "init-db", "from": "service", "to": "db", "y": 472, "label": "initUserTables(userId)", "variant": "default" },
+    { "id": "res-db", "from": "db", "to": "service", "y": 510, "label": "DB inicializada", "variant": "return" },
+    { "id": "return-provider", "from": "service", "to": "provider", "y": 554, "label": "Usuario autenticado", "variant": "return" },
+    { "id": "notify-ui", "from": "provider", "to": "ui", "y": 594, "label": "notifyListeners()", "variant": "return" },
+    { "id": "nav-home", "from": "ui", "to": "user", "y": 634, "label": "Navega a HomeScreen", "variant": "return" }
+  ],
+  "activations": [
+    { "participant": "ui", "from": 180, "to": 638, "type": "frontend" },
+    { "participant": "provider", "from": 222, "to": 598, "type": "frontend" },
+    { "participant": "service", "from": 264, "to": 558, "type": "backend" },
+    { "participant": "backend", "from": 306, "to": 350, "type": "cloud" },
+    { "participant": "storage", "from": 392, "to": 434, "type": "security" },
+    { "participant": "db", "from": 472, "to": 514, "type": "database" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Flujo de Autenticación",
+      "items": [
+        "Las credenciales viajan desde la UI hacia AuthProvider y AuthService",
+        "El backend valida el usuario y emite un token JWT firmado"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Seguridad & Cifrado",
+      "items": [
+        "El token JWT se almacena de forma segura mediante FlutterSecureStorage (KeyStore en Android / Keychain en iOS)",
+        "No se persisten contraseñas en texto plano"
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": "Reactividad de Estado",
+      "items": [
+        "AuthProvider notifica el cambio de sesión a toda la jerarquía de widgets",
+        "La navegación reacciona automáticamente redirigiendo al HomeScreen"
+      ]
+    }
+  ]
+}

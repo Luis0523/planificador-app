@@ -10,10 +10,10 @@ class UbicacionService {
   Future<int> crear(Ubicacion ubicacion) =>
       DatabaseHelper.instance.insert(Constants.tableUbicaciones, ubicacion.toMap());
 
-  Future<List<Ubicacion>> listar(int idUsuario) async {
+  Future<List<Ubicacion>> listar(String idUsuario) async {
     final filas = await DatabaseHelper.instance.query(
       Constants.tableUbicaciones,
-      where: '${'id_usuario'} = ?',
+      where: 'id_usuario = ?',
       whereArgs: [idUsuario],
       orderBy: 'fecha_creacion DESC',
     );

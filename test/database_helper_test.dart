@@ -8,7 +8,9 @@ void main() {
   setUpAll(sqfliteFfiInit);
 
   setUp(() {
-    databaseFactory = databaseFactoryFfi;
+    databaseFactory = databaseFactoryFfiNoIsolate;
+    DatabaseHelper.databasePathOverride = ':memory:';
+    DatabaseHelper.instance.close();
   });
 
   tearDown(() => DatabaseHelper.instance.close());
@@ -38,7 +40,7 @@ void main() {
     final db = await DatabaseHelper.instance.database;
 
     final idUbicacion = await db.insert(Constants.tableUbicaciones, {
-      'id_usuario': 1,
+      'id_usuario': '58172ec3-1128-45d3-8837-b712dc18b387',
       'nombre': 'Parque Central',
       'direccion': 'Centro',
       'latitud': 19.4326,
@@ -106,5 +108,13 @@ void main() {
     expect(
         await db.query(Constants.tableHistorial), isEmpty,
         reason: 'el historial debe borrarse en cascada');
+  });
+
+  test('Fase 6 (v2): id_usuario es TEXT (el backend usa UUID string)', () async {
+    final db = await DatabaseHelper.instance.database;
+    final columnas =
+        await db.rawQuery('PRAGMA table_info(${Constants.tableUbicaciones})');
+    final idUsuario = columnas.firstWhere((c) => c['name'] == 'id_usuario');
+    expect(idUsuario['type'], 'TEXT');
   });
 }

@@ -1,0 +1,98 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Flujo de Evaluación de Clima y Probabilidad",
+    "output": "weather-probability.workflow.html",
+    "animation": "trace",
+    "visual_preset": "signal-flow",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "full-eval-path",
+        "label": "Flujo completo de evaluación",
+        "focus": ["user_action", "activity_screen", "actividades_provider", "ubicacion_service", "clima_service", "weather_api", "prob_service", "sqlite_db", "result_screen"],
+        "note": "Ruta principal desde la selección del usuario hasta el cálculo de probabilidad."
+      },
+      {
+        "id": "weather-query",
+        "label": "Consulta y caché de clima",
+        "focus": ["ubicacion_service", "clima_service", "weather_api"],
+        "note": "Obtención de coordenadas geográficas y llamada a la API de clima."
+      },
+      {
+        "id": "rule-evaluation",
+        "label": "Evaluación de reglas meteorológicas",
+        "focus": ["sqlite_db", "prob_service", "historial_table", "result_screen"],
+        "note": "Comparación de umbrales (temperatura, lluvia, viento) y registro en historial."
+      }
+    ]
+  },
+  "lanes": [
+    { "id": "ui", "label": "Capa de Presentación (UI)" },
+    { "id": "provider", "label": "Gestor de Estado (Provider)" },
+    { "id": "services", "label": "Motor de Servicios & Lógica" },
+    { "id": "storage_ext", "label": "APIs Externas & Persistencia" }
+  ],
+  "phases": [
+    { "id": "intake", "label": "1. Selección & Petición", "fromCol": 0, "toCol": 1 },
+    { "id": "weather", "label": "2. Consulta Meteorológica", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "calculation", "label": "3. Evaluación & Persistencia", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+  ],
+  "groups": [
+    { "id": "ui_group", "label": "Interacción de Usuario", "lane": "ui", "fromCol": 0, "toCol": 1 },
+    { "id": "weather_group", "label": "Integración Meteorológica", "lane": "services", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "calc_group", "label": "Algoritmo de Viabilidad", "lane": "services", "fromCol": 4, "toCol": 5, "variant": "emphasis" },
+    { "id": "ext_group", "label": "Persistencia y Fuentes Externas", "lane": "storage_ext", "fromCol": 3, "toCol": 5, "variant": "dashed" }
+  ],
+  "mainPath": ["user_action", "activity_screen", "actividades_provider", "ubicacion_service", "clima_service", "prob_service", "result_screen"],
+  "nodes": [
+    { "id": "user_action", "lane": "ui", "col": 0, "type": "external", "label": "Usuario", "sublabel": "Elige Actividad + Fecha", "width": 140 },
+    { "id": "activity_screen", "lane": "ui", "col": 1, "type": "frontend", "label": "Pantalla Actividad", "sublabel": "Dispara consulta", "width": 140 },
+    { "id": "actividades_provider", "lane": "provider", "col": 1, "type": "frontend", "label": "ActividadesProvider", "sublabel": "Controla estado", "tag": "Reactive State", "width": 140 },
+    { "id": "ubicacion_service", "lane": "services", "col": 2, "type": "backend", "label": "UbicacionService", "sublabel": "Latitud / Longitud", "width": 140 },
+    { "id": "clima_service", "lane": "services", "col": 3, "type": "backend", "label": "ClimaService", "sublabel": "Consulta Pronóstico", "width": 140 },
+    { "id": "weather_api", "lane": "storage_ext", "col": 3, "type": "cloud", "label": "OpenWeather API", "sublabel": "HTTP REST JSON", "tag": "External API", "width": 140 },
+    { "id": "sqlite_db", "lane": "storage_ext", "col": 4, "type": "database", "label": "SQLite Condiciones", "sublabel": "Límites Min/Max", "width": 140 },
+    { "id": "prob_service", "lane": "services", "col": 4, "type": "backend", "label": "ProbabilidadService", "sublabel": "Calcula Score %", "tag": "Core Algorithm", "width": 140 },
+    { "id": "historial_table", "lane": "storage_ext", "col": 5, "type": "database", "label": "Historial SQLite", "sublabel": "Registra Resultado", "width": 140 },
+    { "id": "result_screen", "lane": "ui", "col": 5, "type": "frontend", "label": "Recomendación UI", "sublabel": "Indicador Visual %", "width": 140 }
+  ],
+  "edges": [
+    { "id": "user-to-screen", "from": "user_action", "to": "activity_screen", "variant": "default" },
+    { "id": "screen-to-provider", "from": "activity_screen", "to": "actividades_provider", "label": "evaluarViabilidad()", "variant": "emphasis" },
+    { "id": "provider-to-loc", "from": "actividades_provider", "to": "ubicacion_service", "label": "coordenadas", "variant": "default" },
+    { "id": "loc-to-clima", "from": "ubicacion_service", "to": "clima_service", "label": "lat, lon, fecha", "variant": "default" },
+    { "id": "clima-to-api", "from": "clima_service", "to": "weather_api", "label": "HTTP GET", "variant": "dashed" },
+    { "id": "clima-to-prob", "from": "clima_service", "to": "prob_service", "label": "datos clima", "variant": "emphasis" },
+    { "id": "db-to-prob", "from": "sqlite_db", "to": "prob_service", "label": "reglas", "variant": "dashed" },
+    { "id": "prob-to-historial", "from": "prob_service", "to": "historial_table", "label": "guarda log", "variant": "dashed" },
+    { "id": "prob-to-result", "from": "prob_service", "to": "result_screen", "label": "% Viabilidad", "variant": "emphasis", "role": "return" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Evaluación Contextual",
+      "items": [
+        "El usuario selecciona la actividad y fecha deseada en la interfaz",
+        "El sistema resuelve las coordenadas geográficas de la ubicación vinculada"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Motor Meteorológico",
+      "items": [
+        "ClimaService obtiene el pronóstico en tiempo real desde OpenWeather",
+        "ProbabilidadService pondera temperatura, viento y probabilidad de precipitación"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Persistencia & Feedback",
+      "items": [
+        "El cálculo final se almacena en la tabla historial para trazabilidad",
+        "La interfaz muestra gráficos y badges reactivos con la recomendación"
+      ]
+    }
+  ]
+}

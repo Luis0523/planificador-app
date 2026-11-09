@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../config/constants.dart';
@@ -33,6 +34,8 @@ class _SeleccionMapaScreenState extends State<SeleccionMapaScreen> {
   late final TextEditingController _longitudCtrl;
   String? _direccion;
   bool _buscandoDireccion = false;
+  GoogleMapController? _mapController;
+  bool _aplicarGpsAlMapa = false;
 
   bool get _usarMapaReal => !kIsWeb && Constants.googleMapsApiKey.isNotEmpty;
 
@@ -43,11 +46,11 @@ class _SeleccionMapaScreenState extends State<SeleccionMapaScreen> {
     _longitud = widget.longitud;
     _latitudCtrl = TextEditingController(text: _latitud.toStringAsFixed(6));
     _longitudCtrl = TextEditingController(text: _longitud.toStringAsFixed(6));
-    if (_usarMapaReal) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _buscarDireccion();
-      });
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _buscarDireccion();
+      _posicionarEnGps();
+    });
   }
 
   @override
@@ -55,6 +58,44 @@ class _SeleccionMapaScreenState extends State<SeleccionMapaScreen> {
     _latitudCtrl.dispose();
     _longitudCtrl.dispose();
     super.dispose();
+  }
+
+  /// Intenta iniciar el mapa en la ubicación actual del dispositivo
+  /// (en vez de la coordenada por defecto).
+  Future<void> _posicionarEnGps() async {
+    Position? pos;
+    try {
+      var permiso = await Geolocator.checkPermission();
+      if (permiso == LocationPermission.denied) {
+        permiso = await Geolocator.requestPermission();
+      }
+      if (permiso != LocationPermission.denied &&
+          permiso != LocationPermission.deniedForever) {
+        pos = await Geolocator.getCurrentPosition();
+      }
+    } catch (_) {
+      pos = null;
+    }
+    if (pos == null || !mounted) return;
+
+    final lat = pos.latitude;
+    final lon = pos.longitude;
+    setState(() {
+      _latitud = lat;
+      _longitud = lon;
+    });
+    _latitudCtrl.text = _latitud.toStringAsFixed(6);
+    _longitudCtrl.text = _longitud.toStringAsFixed(6);
+
+    final controller = _mapController;
+    if (controller != null) {
+      controller.animateCamera(
+        CameraUpdate.newLatLngZoom(LatLng(_latitud, _longitud), 15),
+      );
+    } else {
+      _aplicarGpsAlMapa = true;
+    }
+    _buscarDireccion();
   }
 
   void _seleccionarPunto(LatLng punto) {
@@ -130,6 +171,15 @@ class _SeleccionMapaScreenState extends State<SeleccionMapaScreen> {
         target: LatLng(_latitud, _longitud),
         zoom: 15,
       ),
+      onMapCreated: (controller) {
+        _mapController = controller;
+        if (_aplicarGpsAlMapa) {
+          _aplicarGpsAlMapa = false;
+          controller.animateCamera(
+            CameraUpdate.newLatLngZoom(LatLng(_latitud, _longitud), 15),
+          );
+        }
+      },
       markers: {
         Marker(
           markerId: const MarkerId('punto_seleccionado'),

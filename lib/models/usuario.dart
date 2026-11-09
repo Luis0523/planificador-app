@@ -1,5 +1,7 @@
+/// Usuario tal como lo devuelve el backend (contrato Postman).
+/// `id` es el `idUsuario` del backend (UUID string).
 class Usuario {
-  final int id;
+  final String id;
   final String nombreUsuario;
   final String nombreCompleto;
   final String correo;
@@ -11,22 +13,24 @@ class Usuario {
     required this.nombreUsuario,
     required this.nombreCompleto,
     required this.correo,
-    required this.telefono,
+    this.telefono = '',
     this.requiereCambioContrasena = false,
   });
 
+  /// Parsea el objeto `usuario` del backend. Acepta `idUsuario` (backend)
+  /// con fallback a `id`. El `telefono` es opcional (no viene en login).
   factory Usuario.fromMap(Map<String, dynamic> json) => Usuario(
-        id: json['id'] as int,
-        nombreUsuario: json['nombreUsuario'] as String? ?? '',
-        nombreCompleto: json['nombreCompleto'] as String? ?? '',
-        correo: json['correo'] as String? ?? '',
-        telefono: json['telefono'] as String? ?? '',
+        id: (json['idUsuario'] ?? json['id'] ?? '') as String,
+        nombreUsuario: (json['nombreUsuario'] as String?) ?? '',
+        nombreCompleto: (json['nombreCompleto'] as String?) ?? '',
+        correo: (json['correo'] as String?) ?? '',
+        telefono: (json['telefono'] as String?) ?? '',
         requiereCambioContrasena:
-            json['requiereCambioContrasena'] as bool? ?? false,
+            (json['requiereCambioContrasena'] as bool?) ?? false,
       );
 
   Map<String, dynamic> toMap() => {
-        'id': id,
+        'idUsuario': id,
         'nombreUsuario': nombreUsuario,
         'nombreCompleto': nombreCompleto,
         'correo': correo,

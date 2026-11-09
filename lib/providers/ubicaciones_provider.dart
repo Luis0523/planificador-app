@@ -7,7 +7,7 @@ class UbicacionesProvider extends ChangeNotifier {
   final UbicacionService _service = UbicacionService.instance;
 
   List<Ubicacion> _ubicaciones = [];
-  int? _idUsuario;
+  String? _idUsuario;
   bool _cargando = false;
   String? _error;
 
@@ -15,7 +15,7 @@ class UbicacionesProvider extends ChangeNotifier {
   bool get cargando => _cargando;
   String? get error => _error;
 
-  Future<void> cargar(int idUsuario) async {
+  Future<void> cargar(String idUsuario) async {
     _idUsuario = idUsuario;
     _cargando = true;
     _error = null;

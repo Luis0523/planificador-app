@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Planificador de Actividades - Arquitectura General",
+    "output": "system-architecture.html",
+    "quality_profile": "showcase",
+    "views": [
+      { "id": "main-flow", "label": "Flujo principal de datos", "focus": ["ui", "providers", "prob_service", "clima_service", "ext_weather"], "note": "Interacción de la UI y los Providers con el cálculo de probabilidad meteorológica." },
+      { "id": "storage-and-auth", "label": "Autenticación y persistencia", "focus": ["ui", "providers", "auth_service", "secure_storage", "sqlite_db"], "note": "Gestión de sesiones seguras y persistencia SQLite local." },
+      { "id": "external-services", "label": "Integraciones externas", "focus": ["clima_service", "maps_service", "auth_service", "ext_weather", "ext_maps", "ext_backend"], "note": "Consumo de APIs de Google Maps, Clima y Backend." }
+    ]
+  },
+  "components": [
+    { "id": "ui", "type": "frontend", "label": "Flutter UI", "sublabel": "Screens & Widgets", "pos": [40, 270], "size": [130, 60] },
+    { "id": "providers", "type": "frontend", "label": "State Management", "sublabel": "Provider Package", "pos": [260, 270], "size": [140, 60] },
+    { "id": "prob_service", "type": "backend", "label": "ProbabilidadService", "sublabel": "Lógica de viabilidad", "pos": [480, 130], "size": [150, 60] },
+    { "id": "clima_service", "type": "backend", "label": "ClimaService", "sublabel": "OpenWeather API Client", "pos": [710, 130], "size": [150, 60] },
+    { "id": "maps_service", "type": "backend", "label": "MapsService", "sublabel": "Places & Geolocator", "pos": [710, 270], "size": [150, 60] },
+    { "id": "auth_service", "type": "backend", "label": "Auth & ApiService", "sublabel": "Auth / Mock Backend", "pos": [480, 410], "size": [150, 60] },
+    { "id": "secure_storage", "type": "security", "label": "SecureStorage", "sublabel": "JWT / Cifrado local", "pos": [480, 550], "size": [150, 60] },
+    { "id": "sqlite_db", "type": "database", "label": "DatabaseHelper", "sublabel": "SQLite (4 Tablas)", "pos": [710, 550], "size": [150, 60] },
+    { "id": "ext_weather", "type": "external", "label": "Weather API", "sublabel": "Pronóstico / Clima", "pos": [940, 130], "size": [130, 60] },
+    { "id": "ext_maps", "type": "external", "label": "Google Maps", "sublabel": "Places & Maps SDK", "pos": [940, 270], "size": [130, 60] },
+    { "id": "ext_backend", "type": "cloud", "label": "Backend API", "sublabel": "REST Service", "pos": [940, 410], "size": [130, 60] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Flutter Client App (Mobile)", "wraps": ["ui", "providers", "prob_service", "clima_service", "maps_service", "auth_service", "secure_storage", "sqlite_db"] },
+    { "kind": "security-group", "label": "Persistencia & Seguridad", "wraps": ["secure_storage", "sqlite_db"] }
+  ],
+  "connections": [
+    { "id": "ui-to-providers", "from": "ui", "to": "providers", "label": "Observa / Notifica", "labelDy": -24, "variant": "emphasis" },
+    { "id": "providers-to-prob", "from": "providers", "to": "prob_service", "label": "Evalúa actividad", "fromSide": "top", "toSide": "left" },
+    { "id": "prob-to-clima", "from": "prob_service", "to": "clima_service", "label": "Consulta clima" },
+    { "id": "clima-to-ext", "from": "clima_service", "to": "ext_weather", "label": "HTTP GET", "variant": "dashed" },
+    { "id": "providers-to-maps", "from": "providers", "to": "maps_service", "label": "Coordenadas" },
+    { "id": "maps-to-ext", "from": "maps_service", "to": "ext_maps", "label": "Places SDK", "variant": "dashed" },
+    { "id": "providers-to-auth", "from": "providers", "to": "auth_service", "label": "Login / Registro", "fromSide": "bottom", "toSide": "left" },
+    { "id": "auth-to-backend", "from": "auth_service", "to": "ext_backend", "label": "REST Auth", "variant": "dashed" },
+    { "id": "auth-to-storage", "from": "auth_service", "to": "secure_storage", "label": "Token JWT", "variant": "security", "fromSide": "bottom", "toSide": "top", "labelDy": 30 },
+    { "id": "auth-to-sqlite", "from": "auth_service", "to": "sqlite_db", "label": "Sincroniza DB", "fromSide": "right", "toSide": "top" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Presentación & Estado", "items": ["Widgets Flutter desacoplados con arquitectura Provider", "Reactividad y manejo de ciclo de vida en UI"] },
+    { "dot": "emerald", "title": "Cálculo & Integración", "items": ["ProbabilidadService evalúa condiciones de clima en tiempo real", "Geolocalización precisa con Google Places y Geolocator"] },
+    { "dot": "rose", "title": "Persistencia & Seguridad", "items": ["SQLite local con tablas para actividades, condiciones, ubicaciones e historial", "FlutterSecureStorage para credenciales y tokens JWT"] }
+  ]
+}

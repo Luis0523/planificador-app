@@ -1,6 +1,6 @@
 class Ubicacion {
   final int? idUbicacion;
-  final int idUsuario;
+  final String idUsuario;
   final String nombre;
   final String? direccion;
   final double latitud;
@@ -21,7 +21,7 @@ class Ubicacion {
 
   factory Ubicacion.fromMap(Map<String, Object?> map) => Ubicacion(
         idUbicacion: map['id_ubicacion'] as int?,
-        idUsuario: map['id_usuario'] as int,
+        idUsuario: (map['id_usuario'] ?? '') as String,
         nombre: map['nombre'] as String,
         direccion: map['direccion'] as String?,
         latitud: (map['latitud'] as num).toDouble(),
@@ -41,24 +41,4 @@ class Ubicacion {
         'fecha_actualizacion': fechaActualizacion,
       };
 
-  Ubicacion copyWith({
-    int? idUbicacion,
-    int? idUsuario,
-    String? nombre,
-    String? direccion,
-    double? latitud,
-    double? longitud,
-    String? fechaCreacion,
-    String? fechaActualizacion,
-  }) =>
-      Ubicacion(
-        idUbicacion: idUbicacion ?? this.idUbicacion,
-        idUsuario: idUsuario ?? this.idUsuario,
-        nombre: nombre ?? this.nombre,
-        direccion: direccion ?? this.direccion,
-        latitud: latitud ?? this.latitud,
-        longitud: longitud ?? this.longitud,
-        fechaCreacion: fechaCreacion ?? this.fechaCreacion,
-        fechaActualizacion: fechaActualizacion ?? this.fechaActualizacion,
-      );
 }

@@ -1,8 +1,7 @@
 import '../models/usuario.dart';
 
-/// TODO: eliminar cuando esté desplegado el backend real
-/// (`Constants.useMockBackend = false`). Simula el backend de auth/perfil
-/// en memoria para que la app funcione sin servidor.
+/// Backend falso en memoria usado SOLO en las pruebas automáticas.
+/// En la app real `USE_MOCK_BACKEND=false` y se usa el backend de Fly.
 class MockBackend {
   MockBackend._();
   static final MockBackend instance = MockBackend._();
@@ -79,7 +78,7 @@ class MockBackend {
   Usuario perfilActual() {
     final u = usuarioActual;
     return Usuario(
-      id: int.parse(u['id']!),
+      id: u['id']!,
       nombreUsuario: u['nombreUsuario']!,
       nombreCompleto: u['nombreCompleto']!,
       correo: u['correo']!,

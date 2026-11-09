@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:path/path.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-import 'package:planificador_actividades/config/constants.dart';
 import 'package:planificador_actividades/database/database_helper.dart';
 import 'package:planificador_actividades/main.dart';
 import 'package:planificador_actividades/services/mock_backend.dart';
@@ -19,7 +17,9 @@ Future<void> _login(WidgetTester tester) async {
 }
 
 Future<void> _irAUbicaciones(WidgetTester tester) async {
-  await tester.tap(find.byKey(const Key('nav_ubicaciones')));
+  await tester.tap(find.byIcon(Icons.menu));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('drawer_ubicaciones')));
   await tester.pumpAndSettle();
 }
 
@@ -28,9 +28,32 @@ Future<void> _abrirFormulario(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+Future<void> _limpiarSnackBars(WidgetTester tester) async {
+  tester
+      .state<ScaffoldMessengerState>(find.byType(ScaffoldMessenger).first)
+      .clearSnackBars();
+  await tester.pumpAndSettle();
+}
+
+Future<void> _elegirPuntoEnMapa(
+  WidgetTester tester, {
+  String lat = '19.4326',
+  String lon = '-99.1332',
+}) async {
+  await tester.tap(find.byKey(const Key('btn_mapa')));
+  await tester.pumpAndSettle();
+  await tester.enterText(find.byKey(const Key('mapa_latitud')), lat);
+  await tester.enterText(find.byKey(const Key('mapa_longitud')), lon);
+  await tester.tap(find.byKey(const Key('mapa_aceptar')));
+  await tester.pumpAndSettle();
+}
+
 /// Espera a que las operaciones reales de SQLite terminen y la UI se asiente.
 Future<void> _esperarDB(WidgetTester tester) async {
-  await Future<void>.delayed(const Duration(milliseconds: 250));
+  for (var i = 0; i < 80; i++) {
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    await tester.pump();
+  }
   await tester.pumpAndSettle();
 }
 
@@ -43,7 +66,7 @@ Future<void> _flujo(WidgetTester tester, Future<void> Function() cuerpo) async {
     await tester.pumpAndSettle();
     await _login(tester);
     // Deja que la carga inicial (ubicaciones) termine.
-    await Future<void>.delayed(const Duration(milliseconds: 300));
+    await Future<void>.delayed(const Duration(milliseconds: 600));
     await tester.pumpAndSettle();
     await cuerpo();
   });
@@ -53,12 +76,11 @@ void main() {
   setUpAll(sqfliteFfiInit);
 
   setUp(() async {
-    databaseFactory = databaseFactoryFfi;
+    databaseFactory = databaseFactoryFfiNoIsolate;
+    DatabaseHelper.databasePathOverride = ':memory:';
     FlutterSecureStorage.setMockInitialValues({});
     MockBackend.instance.reset();
     await DatabaseHelper.instance.close();
-    // Borra el archivo de la BD para aislar cada test.
-    await deleteDatabase(join(await getDatabasesPath(), Constants.dbName));
   });
 
   testWidgets('crear una ubicación y verla en el listado', (tester) async {
@@ -72,10 +94,7 @@ void main() {
           find.byKey(const Key('ubicacion_nombre')), 'Parque Central');
       await tester.enterText(
           find.byKey(const Key('ubicacion_direccion')), 'Centro');
-      await tester.enterText(
-          find.byKey(const Key('ubicacion_latitud')), '19.4326');
-      await tester.enterText(
-          find.byKey(const Key('ubicacion_longitud')), '-99.1332');
+      await _elegirPuntoEnMapa(tester);
       await tester.ensureVisible(find.byKey(const Key('ubicacion_guardar')));
       await tester.tap(find.byKey(const Key('ubicacion_guardar')));
       await _esperarDB(tester);
@@ -85,32 +104,30 @@ void main() {
     });
   });
 
-  testWidgets('crear por GPS (mock) llena coordenadas y guarda',
+  testWidgets('si el GPS falla avisa y permite elegir el mapa',
       (tester) async {
     await _flujo(tester, () async {
       await _irAUbicaciones(tester);
       await _abrirFormulario(tester);
 
+      // En el entorno de pruebas no hay GPS real: debe avisar, no inventar
+      // coordenadas.
       await tester.tap(find.byKey(const Key('btn_gps')));
       await _esperarDB(tester);
+      expect(find.textContaining('No se pudo obtener tu ubicación'),
+          findsOneWidget);
+      expect(find.byKey(const Key('ubicacion_sin_punto')), findsOneWidget);
+      await _limpiarSnackBars(tester);
 
-      expect(
-          find.textContaining('Se usó una ubicación de ejemplo'), findsOneWidget);
-      expect(
-        tester
-            .widget<TextFormField>(find.byKey(const Key('ubicacion_latitud')))
-            .controller
-            ?.text,
-        '19.432600',
-      );
-
+      // El usuario puede continuar eligiendo el punto en el mapa.
       await tester.enterText(
-          find.byKey(const Key('ubicacion_nombre')), 'Desde GPS');
+          find.byKey(const Key('ubicacion_nombre')), 'Desde mapa');
+      await _elegirPuntoEnMapa(tester);
       await tester.ensureVisible(find.byKey(const Key('ubicacion_guardar')));
       await tester.tap(find.byKey(const Key('ubicacion_guardar')));
       await _esperarDB(tester);
 
-      expect(find.text('Desde GPS'), findsOneWidget);
+      expect(find.text('Desde mapa'), findsOneWidget);
     });
   });
 
@@ -131,19 +148,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        tester
-            .widget<TextFormField>(find.byKey(const Key('ubicacion_latitud')))
-            .controller
-            ?.text,
-        '20.500000',
-      );
-      expect(
-        tester
-            .widget<TextFormField>(find.byKey(const Key('ubicacion_longitud')))
-            .controller
-            ?.text,
-        '-100.500000',
-      );
+          find.byKey(const Key('ubicacion_punto_seleccionado')), findsOneWidget);
+      expect(find.textContaining('20.5000'), findsWidgets);
+      expect(find.textContaining('-100.5000'), findsWidgets);
     });
   });
 
@@ -154,10 +161,7 @@ void main() {
       await _abrirFormulario(tester);
       await tester.enterText(
           find.byKey(const Key('ubicacion_nombre')), 'Parque Central');
-      await tester.enterText(
-          find.byKey(const Key('ubicacion_latitud')), '19.4326');
-      await tester.enterText(
-          find.byKey(const Key('ubicacion_longitud')), '-99.1332');
+      await _elegirPuntoEnMapa(tester);
       await tester.ensureVisible(find.byKey(const Key('ubicacion_guardar')));
       await tester.tap(find.byKey(const Key('ubicacion_guardar')));
       await _esperarDB(tester);
@@ -186,9 +190,7 @@ void main() {
       await _abrirFormulario(tester);
       await tester.enterText(
           find.byKey(const Key('ubicacion_nombre')), 'A Eliminar');
-      await tester.enterText(find.byKey(const Key('ubicacion_latitud')), '19.0');
-      await tester.enterText(
-          find.byKey(const Key('ubicacion_longitud')), '-99.0');
+      await _elegirPuntoEnMapa(tester, lat: '19.0', lon: '-99.0');
       await tester.ensureVisible(find.byKey(const Key('ubicacion_guardar')));
       await tester.tap(find.byKey(const Key('ubicacion_guardar')));
       await _esperarDB(tester);
@@ -213,18 +215,29 @@ void main() {
     });
   });
 
-  testWidgets('validación: nombre y coordenadas obligatorios', (tester) async {
+  testWidgets('validación: nombre obligatorio y punto sin seleccionar',
+      (tester) async {
     await _flujo(tester, () async {
       await _irAUbicaciones(tester);
       await _abrirFormulario(tester);
 
+      // Sin nombre y sin punto: falla la validación del nombre.
       await tester.ensureVisible(find.byKey(const Key('ubicacion_guardar')));
       await tester.tap(find.byKey(const Key('ubicacion_guardar')));
       await _esperarDB(tester);
-
       expect(find.text('El nombre es obligatorio'), findsOneWidget);
-      expect(find.text('Ingresa una latitud válida'), findsOneWidget);
-      expect(find.text('Ingresa una longitud válida'), findsOneWidget);
+
+      // Con nombre pero sin elegir punto: se avisa y no guarda.
+      await tester.enterText(
+          find.byKey(const Key('ubicacion_nombre')), 'Sin punto');
+      await tester.ensureVisible(find.byKey(const Key('ubicacion_guardar')));
+      await tester.tap(find.byKey(const Key('ubicacion_guardar')));
+      await tester.pumpAndSettle();
+      expect(
+          find.textContaining('Selecciona el punto en el mapa o usa tu ubicación.'),
+          findsOneWidget);
+      // No se creó: seguimos en el formulario.
+      expect(find.byKey(const Key('ubicacion_guardar')), findsOneWidget);
     });
   });
 }

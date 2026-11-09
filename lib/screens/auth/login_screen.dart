@@ -103,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       labelText: 'Contraseña',
                       prefixIcon: Icon(Icons.lock_outline),
                     ),
-                    validator: validarContrasena,
+                    validator: validarContrasenaLogin,
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(

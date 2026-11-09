@@ -27,9 +27,9 @@ class LoginResult {
 
 /// Servicio de autenticación: login, registro, recuperación y cambio de contraseña.
 ///
-/// Mientras el backend Node no esté desplegado (`Constants.useMockBackend == true`)
-/// responde con datos simulados. La interfaz no cambia: al conectar el backend
-/// real basta con poner `useMockBackend = false`.
+/// Con `Constants.useMockBackend == true` responde con datos simulados
+/// (útil en tests y sin backend). Con el backend real desplagado, la app
+/// apunta a `API_BASE_URL` y `useMockBackend` se apaga vía .env.
 class AuthService {
   AuthService._();
   static final AuthService instance = AuthService._();
@@ -54,7 +54,7 @@ class AuthService {
         requiereCambioContrasena: body['requiereCambioContrasena'] as bool,
       );
     } on DioException catch (e) {
-      throw AuthException(_mensajeDio(e));
+      throw AuthException(ApiService.mensajeErrorDio(e));
     }
   }
 
@@ -87,7 +87,7 @@ class AuthService {
         'contrasena': contrasena,
       });
     } on DioException catch (e) {
-      throw AuthException(_mensajeDio(e));
+      throw AuthException(ApiService.mensajeErrorDio(e));
     }
   }
 
@@ -98,37 +98,43 @@ class AuthService {
       if (correo.trim().isEmpty) {
         throw AuthException('El correo es obligatorio');
       }
-      return; // TODO: mock: siempre "enviado"
+      return; // En pruebas se simula que el correo siempre se envía.
     }
 
     try {
       await _api.dio.post(Constants.authForgotPassword, data: {'correo': correo});
     } on DioException catch (e) {
-      throw AuthException(_mensajeDio(e));
+      throw AuthException(ApiService.mensajeErrorDio(e));
     }
   }
 
-  // ---- Cambio de contraseña (requiere JWT del login con temporal) ----
+  // ---- Cambio de contraseña (requiere JWT; doble confirmación) ----
 
-  Future<void> changePassword(String nuevaContrasena) async {
+  Future<void> changePassword(
+    String nuevaContrasena,
+    String confirmarContrasena,
+  ) async {
     if (_usarMock) {
-      if (nuevaContrasena.length < 6) {
-        throw AuthException('La contraseña debe tener al menos 6 caracteres');
+      if (nuevaContrasena.length < 8) {
+        throw AuthException('La contraseña debe tener al menos 8 caracteres');
       }
-      return; // TODO: mock: siempre exitoso
+      return; // En pruebas se simula que el cambio siempre funciona.
     }
 
     try {
       await _api.dio.post(
         Constants.authChangePassword,
-        data: {'nuevaContrasena': nuevaContrasena},
+        data: {
+          'nuevaContrasena': nuevaContrasena,
+          'confirmarContrasena': confirmarContrasena,
+        },
       );
     } on DioException catch (e) {
-      throw AuthException(_mensajeDio(e));
+      throw AuthException(ApiService.mensajeErrorDio(e));
     }
   }
 
-  // ---- Mock (TODO: reemplazar por backend real) ----
+  // ---- Modo de pruebas (sin servidor) ----
 
   LoginResult _mockLogin(String correo, String contrasena) {
     final backend = MockBackend.instance;
@@ -147,7 +153,7 @@ class AuthService {
     return LoginResult(
       token: 'mock.jwt.${DateTime.now().millisecondsSinceEpoch}',
       usuario: Usuario(
-        id: int.parse(usuario['id']!),
+        id: usuario['id']!,
         nombreUsuario: usuario['nombreUsuario']!,
         nombreCompleto: usuario['nombreCompleto']!,
         correo: usuario['correo']!,
@@ -178,16 +184,6 @@ class AuthService {
       contrasena: contrasena,
     );
   }
-
-  String _mensajeDio(DioException e) {
-    final data = e.response?.data;
-    if (data is Map && data['mensaje'] != null) {
-      return data['mensaje'] as String;
-    }
-    if (e.type == DioExceptionType.connectionTimeout ||
-        e.type == DioExceptionType.receiveTimeout) {
-      return 'El servidor no responde. Intenta de nuevo.';
-    }
-    return 'Error de conexión con el servidor.';
-  }
 }
+
+

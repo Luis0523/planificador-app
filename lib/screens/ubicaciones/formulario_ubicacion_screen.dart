@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 
+import '../../config/theme.dart';
 import '../../models/ubicacion.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/ubicaciones_provider.dart';
@@ -12,6 +12,7 @@ import '../../utils/validators.dart';
 import 'seleccion_mapa_screen.dart';
 
 /// Formulario de ubicación: sirve para crear y editar.
+/// Las coordenadas NO se escriben a mano: se eligen con GPS o en el mapa.
 class FormularioUbicacionScreen extends StatefulWidget {
   const FormularioUbicacionScreen({super.key, this.ubicacion});
 
@@ -26,12 +27,13 @@ class _FormularioUbicacionScreenState extends State<FormularioUbicacionScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nombreCtrl;
   late final TextEditingController _direccionCtrl;
-  late final TextEditingController _latitudCtrl;
-  late final TextEditingController _longitudCtrl;
 
+  double? _latitud;
+  double? _longitud;
   bool _buscandoGps = false;
 
   bool get _editando => widget.ubicacion != null;
+  bool get _tienePunto => _latitud != null && _longitud != null;
 
   @override
   void initState() {
@@ -39,24 +41,22 @@ class _FormularioUbicacionScreenState extends State<FormularioUbicacionScreen> {
     final u = widget.ubicacion;
     _nombreCtrl = TextEditingController(text: u?.nombre ?? '');
     _direccionCtrl = TextEditingController(text: u?.direccion ?? '');
-    _latitudCtrl =
-        TextEditingController(text: u?.latitud.toStringAsFixed(6) ?? '');
-    _longitudCtrl =
-        TextEditingController(text: u?.longitud.toStringAsFixed(6) ?? '');
+    _latitud = u?.latitud;
+    _longitud = u?.longitud;
   }
 
   @override
   void dispose() {
     _nombreCtrl.dispose();
     _direccionCtrl.dispose();
-    _latitudCtrl.dispose();
-    _longitudCtrl.dispose();
     super.dispose();
   }
 
   void _setCoordenadas(double latitud, double longitud) {
-    _latitudCtrl.text = latitud.toStringAsFixed(6);
-    _longitudCtrl.text = longitud.toStringAsFixed(6);
+    setState(() {
+      _latitud = latitud;
+      _longitud = longitud;
+    });
   }
 
   Future<void> _usarMiUbicacion() async {
@@ -68,47 +68,48 @@ class _FormularioUbicacionScreenState extends State<FormularioUbicacionScreen> {
       }
       if (permiso == LocationPermission.denied ||
           permiso == LocationPermission.deniedForever) {
-        _usarUbicacionMock('Permiso de ubicación denegado');
+        _avisar('Debes permitir el acceso a la ubicación.');
         return;
       }
-      final pos = await Geolocator.getCurrentPosition();
+
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 15),
+        ),
+      );
       if (!mounted) return;
       _setCoordenadas(pos.latitude, pos.longitude);
+
       final direccion = await MapsService.instance
           .geocodificarInverso(pos.latitude, pos.longitude);
       if (direccion != null) _direccionCtrl.text = direccion;
     } catch (_) {
-      _usarUbicacionMock('No se pudo obtener tu ubicación');
+      _avisar('No se pudo obtener tu ubicación. Revisa el GPS e intenta de nuevo.');
     } finally {
       if (mounted) setState(() => _buscandoGps = false);
     }
   }
 
-  void _usarUbicacionMock(String mensaje) {
+  void _avisar(String mensaje) {
     if (!mounted) return;
-    // TODO: quitar cuando haya API key de Google Maps.
-    _setCoordenadas(19.4326, -99.1332);
-    _direccionCtrl.text = 'Ubicación de ejemplo (mock)';
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$mensaje. Se usó una ubicación de ejemplo.')),
+      SnackBar(content: Text(mensaje)),
     );
   }
 
   Future<void> _seleccionarEnMapa() async {
-    final actual = double.tryParse(_latitudCtrl.text.trim());
     final resultado = await Navigator.of(context).push<(double, double)>(
       MaterialPageRoute(
         builder: (_) => SeleccionMapaScreen(
-          latitud: actual ?? 19.4326,
-          longitud: double.tryParse(_longitudCtrl.text.trim()) ?? -99.1332,
+          latitud: _latitud ?? 19.4326,
+          longitud: _longitud ?? -99.1332,
         ),
       ),
     );
     if (resultado == null || !mounted) return;
-    setState(() {
-      _setCoordenadas(resultado.$1, resultado.$2);
-      _direccionCtrl.clear();
-    });
+    _setCoordenadas(resultado.$1, resultado.$2);
+    _direccionCtrl.clear();
     // Geocodificación inversa del punto elegido para autocompletar la dirección.
     final direccion = await MapsService.instance
         .geocodificarInverso(resultado.$1, resultado.$2);
@@ -117,6 +118,14 @@ class _FormularioUbicacionScreenState extends State<FormularioUbicacionScreen> {
 
   Future<void> _guardar() async {
     if (!_formKey.currentState!.validate()) return;
+    if (!_tienePunto) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Selecciona el punto en el mapa o usa tu ubicación.'),
+        ),
+      );
+      return;
+    }
     FocusScope.of(context).unfocus();
 
     final auth = context.read<AuthProvider>();
@@ -132,8 +141,8 @@ class _FormularioUbicacionScreenState extends State<FormularioUbicacionScreen> {
       direccion: _direccionCtrl.text.trim().isEmpty
           ? null
           : _direccionCtrl.text.trim(),
-      latitud: double.parse(_latitudCtrl.text.trim()),
-      longitud: double.parse(_longitudCtrl.text.trim()),
+      latitud: _latitud!,
+      longitud: _longitud!,
       fechaCreacion: _editando ? widget.ubicacion!.fechaCreacion : ahora,
       fechaActualizacion: ahora,
     );
@@ -149,14 +158,12 @@ class _FormularioUbicacionScreenState extends State<FormularioUbicacionScreen> {
       SnackBar(
         content: Text(
           ok
-              ? (_editando
-                  ? 'Ubicación actualizada.'
-                  : 'Ubicación guardada.')
+              ? (_editando ? 'Ubicación actualizada.' : 'Ubicación guardada.')
               : (provider.error ?? 'Error al guardar'),
         ),
       ),
     );
-    if (ok) navigator.pop();
+    if (ok) navigator.pop(ubicacion);
   }
 
   @override
@@ -195,69 +202,14 @@ class _FormularioUbicacionScreenState extends State<FormularioUbicacionScreen> {
                     prefixIcon: Icon(Icons.map_outlined),
                   ),
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  key: const Key('ubicacion_latitud'),
-                  controller: _latitudCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                    signed: true,
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.\-]')),
-                  ],
-                  decoration: const InputDecoration(
-                    labelText: 'Latitud *',
-                    prefixIcon: Icon(Icons.pin_drop_outlined),
-                  ),
-                  validator: validarLatitud,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  key: const Key('ubicacion_longitud'),
-                  controller: _longitudCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                    signed: true,
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.\-]')),
-                  ],
-                  decoration: const InputDecoration(
-                    labelText: 'Longitud *',
-                    prefixIcon: Icon(Icons.pin_drop_outlined),
-                  ),
-                  validator: validarLongitud,
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        key: const Key('btn_gps'),
-                        onPressed: _buscandoGps ? null : _usarMiUbicacion,
-                        icon: _buscandoGps
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.my_location),
-                        label: const Text('Usar mi ubicación'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        key: const Key('btn_mapa'),
-                        onPressed: _seleccionarEnMapa,
-                        icon: const Icon(Icons.map_outlined),
-                        label: const Text('Seleccionar en mapa'),
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 20),
+                _SelectorPunto(
+                  tienePunto: _tienePunto,
+                  latitud: _latitud,
+                  longitud: _longitud,
+                  buscandoGps: _buscandoGps,
+                  onGps: _usarMiUbicacion,
+                  onMapa: _seleccionarEnMapa,
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(
@@ -279,6 +231,119 @@ class _FormularioUbicacionScreenState extends State<FormularioUbicacionScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Zona para elegir el punto: botones GPS/mapa y, una vez elegido,
+/// un resumen visual del lugar (en vez de pedir coordenadas a mano).
+class _SelectorPunto extends StatelessWidget {
+  const _SelectorPunto({
+    required this.tienePunto,
+    required this.latitud,
+    required this.longitud,
+    required this.buscandoGps,
+    required this.onGps,
+    required this.onMapa,
+  });
+
+  final bool tienePunto;
+  final double? latitud;
+  final double? longitud;
+  final bool buscandoGps;
+  final VoidCallback onGps;
+  final VoidCallback onMapa;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                key: const Key('btn_gps'),
+                onPressed: buscandoGps ? null : onGps,
+                icon: buscandoGps
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.my_location),
+                label: const Text('Usar mi ubicación'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: OutlinedButton.icon(
+                key: const Key('btn_mapa'),
+                onPressed: onMapa,
+                icon: const Icon(Icons.map_outlined),
+                label: const Text('Seleccionar en mapa'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (tienePunto)
+          Container(
+            key: const Key('ubicacion_punto_seleccionado'),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: PlanazoColors.primaryContainer.withValues(alpha: 0.25),
+              borderRadius: BorderRadius.circular(PlanazoColors.radiusLg),
+              border: Border.all(color: PlanazoColors.primary),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.check_circle,
+                  color: PlanazoColors.onPrimaryContainer,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Punto seleccionado: '
+                    '${latitud!.toStringAsFixed(4)}, ${longitud!.toStringAsFixed(4)}',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: PlanazoColors.onPrimaryContainer,
+                        ),
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          Container(
+            key: const Key('ubicacion_sin_punto'),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: PlanazoColors.surfaceContainer,
+              borderRadius: BorderRadius.circular(PlanazoColors.radiusLg),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.info_outline,
+                  size: 20,
+                  color: PlanazoColors.onSurfaceVariant,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Elige el lugar con "Usar mi ubicación" o '
+                    '"Seleccionar en el mapa". No hace falta escribir coordenadas.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: PlanazoColors.onSurfaceVariant,
+                        ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }

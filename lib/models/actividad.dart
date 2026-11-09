@@ -49,28 +49,4 @@ class Actividad {
         'fecha_actualizacion': fechaActualizacion,
       };
 
-  Actividad copyWith({
-    int? idActividad,
-    int? idUbicacion,
-    String? descripcion,
-    String? fecha,
-    String? horaInicio,
-    String? horaFin,
-    String? tipoActividad,
-    String? estado,
-    String? fechaCreacion,
-    String? fechaActualizacion,
-  }) =>
-      Actividad(
-        idActividad: idActividad ?? this.idActividad,
-        idUbicacion: idUbicacion ?? this.idUbicacion,
-        descripcion: descripcion ?? this.descripcion,
-        fecha: fecha ?? this.fecha,
-        horaInicio: horaInicio ?? this.horaInicio,
-        horaFin: horaFin ?? this.horaFin,
-        tipoActividad: tipoActividad ?? this.tipoActividad,
-        estado: estado ?? this.estado,
-        fechaCreacion: fechaCreacion ?? this.fechaCreacion,
-        fechaActualizacion: fechaActualizacion ?? this.fechaActualizacion,
-      );
 }

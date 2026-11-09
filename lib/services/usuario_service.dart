@@ -6,8 +6,8 @@ import 'api_service.dart';
 import 'auth_service.dart';
 import 'mock_backend.dart';
 
-/// Perfil de usuario: GET/PUT `/api/users/me`.
-/// Mientras `Constants.useMockBackend` sea true, responde con datos simulados.
+/// Perfil de usuario: GET/PUT `/api/users/me` (contrato Postman).
+/// Las respuestas vienen envueltas en `{ usuario: {...} }`.
 class UsuarioService {
   UsuarioService._();
   static final UsuarioService instance = UsuarioService._();
@@ -20,9 +20,9 @@ class UsuarioService {
 
     try {
       final res = await _api.dio.get(Constants.usersMe);
-      return Usuario.fromMap(res.data as Map<String, dynamic>);
+      return Usuario.fromMap(_desenvolver(res.data));
     } on DioException catch (e) {
-      throw AuthException(_mensajeDio(e));
+      throw AuthException(ApiService.mensajeErrorDio(e));
     }
   }
 
@@ -41,21 +41,15 @@ class UsuarioService {
         Constants.usersMe,
         data: {'nombreCompleto': nombreCompleto, 'telefono': telefono},
       );
-      return Usuario.fromMap(res.data as Map<String, dynamic>);
+      return Usuario.fromMap(_desenvolver(res.data));
     } on DioException catch (e) {
-      throw AuthException(_mensajeDio(e));
+      throw AuthException(ApiService.mensajeErrorDio(e));
     }
   }
 
-  String _mensajeDio(DioException e) {
-    final data = e.response?.data;
-    if (data is Map && data['mensaje'] != null) {
-      return data['mensaje'] as String;
-    }
-    if (e.type == DioExceptionType.connectionTimeout ||
-        e.type == DioExceptionType.receiveTimeout) {
-      return 'El servidor no responde. Intenta de nuevo.';
-    }
-    return 'Error de conexión con el servidor.';
+  Map<String, dynamic> _desenvolver(dynamic data) {
+    final mapa = data as Map<String, dynamic>;
+    if (mapa['usuario'] is Map) return mapa['usuario'] as Map<String, dynamic>;
+    return mapa;
   }
 }

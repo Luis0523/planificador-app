@@ -20,8 +20,17 @@ String? validarContrasena(String? value) {
   if (value == null || value.isEmpty) {
     return 'La contraseña es obligatoria';
   }
-  if (value.length < 6) {
-    return 'La contraseña debe tener al menos 6 caracteres';
+  if (value.length < 8) {
+    return 'La contraseña debe tener al menos 8 caracteres';
+  }
+  return null;
+}
+
+/// Para el login no se exige longitud mínima (solo que no esté vacía);
+/// la política de ≥8 aplica al crear/cambiar contraseña.
+String? validarContrasenaLogin(String? value) {
+  if (value == null || value.isEmpty) {
+    return 'La contraseña es obligatoria';
   }
   return null;
 }

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import 'package:planificador_actividades/database/database_helper.dart';
 import 'package:planificador_actividades/main.dart';
 import 'package:planificador_actividades/services/mock_backend.dart';
 
@@ -25,7 +27,12 @@ Future<void> _abrirDrawer(WidgetTester tester) async {
 }
 
 void main() {
-  setUp(() {
+  setUpAll(sqfliteFfiInit);
+
+  setUp(() async {
+    databaseFactory = databaseFactoryFfiNoIsolate;
+    DatabaseHelper.databasePathOverride = ':memory:';
+    await DatabaseHelper.instance.close();
     FlutterSecureStorage.setMockInitialValues({});
     MockBackend.instance.reset();
   });
@@ -63,17 +70,15 @@ void main() {
     // Inicio (dashboard)
     expect(find.text('¿Qué planazo armamos hoy?'), findsOneWidget);
 
-    // Ubicaciones
-    await tester.tap(find.byKey(const Key('nav_ubicaciones')));
+    // Actividades (sin ubicaciones en este entorno -> guía para crearlas)
+    await tester.tap(find.byKey(const Key('nav_actividades')));
     await tester.pumpAndSettle();
-    expect(find.text('Mis ubicaciones'), findsOneWidget);
-    expect(find.byKey(const Key('btn_nueva_ubicacion')), findsOneWidget);
+    expect(find.text('Primero crea una ubicación'), findsOneWidget);
 
-    // Pendientes
+    // Pendientes (pantalla real de la Fase 7 — sin datos muestra estado vacio)
     await tester.tap(find.byKey(const Key('nav_pendientes')));
     await tester.pumpAndSettle();
-    expect(find.text('Actividades pendientes'), findsOneWidget);
-    expect(find.textContaining('Fase 7'), findsOneWidget);
+    expect(find.textContaining('Sin actividades pendientes'), findsOneWidget);
 
     // Vuelta al inicio
     await tester.tap(find.byKey(const Key('nav_inicio')));
@@ -104,6 +109,19 @@ void main() {
     await tester.tap(find.byKey(const Key('drawer_actividades')));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Fase 6'), findsOneWidget);
+    expect(find.text('Primero crea una ubicación'), findsOneWidget);
+  });
+
+  testWidgets('desde el drawer se abre Mis ubicaciones', (tester) async {
+    await _iniciarApp(tester);
+    await _login(tester);
+
+    await _abrirDrawer(tester);
+    await tester.tap(find.byKey(const Key('drawer_ubicaciones')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Mis ubicaciones'), findsWidgets);
+    expect(find.byKey(const Key('btn_nueva_ubicacion')), findsOneWidget);
+    expect(find.text('Aún no tienes ubicaciones'), findsOneWidget);
   });
 }
