@@ -15,7 +15,6 @@ void main() {
     expect(u.id, '58172ec3-1128-45d3-8837-b712dc18b387');
     expect(u.nombreUsuario, 'prueba');
     expect(u.correo, 'prueba@ejemplo.com');
-    // En login no viene telefono ni requiereCambioContrasena: valores por defecto.
     expect(u.telefono, '');
     expect(u.requiereCambioContrasena, isFalse);
   });

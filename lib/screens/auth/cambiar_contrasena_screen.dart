@@ -30,7 +30,10 @@ class _CambiarContrasenaScreenState extends State<CambiarContrasenaScreen> {
     FocusScope.of(context).unfocus();
 
     final auth = context.read<AuthProvider>();
-    final ok = await auth.cambiarContrasena(_nuevaCtrl.text, _confirmarCtrl.text);
+    final ok = await auth.cambiarContrasena(
+      _nuevaCtrl.text,
+      _confirmarCtrl.text,
+    );
     if (!ok && mounted) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(auth.error ?? 'Error')));
@@ -51,14 +54,18 @@ class _CambiarContrasenaScreenState extends State<CambiarContrasenaScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(Icons.password, size: 64, color: PlanazoColors.primary),
+                const Icon(
+                  Icons.password,
+                  size: 64,
+                  color: PlanazoColors.primary,
+                ),
                 const SizedBox(height: 12),
                 Text(
                   'Planazo',
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        color: PlanazoColors.primary,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    color: PlanazoColors.primary,
+                    fontWeight: FontWeight.w800,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),

@@ -80,16 +80,15 @@ class _RegistroScreenState extends State<RegistroScreen> {
                 Text(
                   'Planazo',
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        color: PlanazoColors.primary,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    color: PlanazoColors.primary,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Únete y empieza a organizar momentos inolvidables.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: PlanazoColors.onSurfaceVariant,
-                      ),
+                  style: Theme.of(context).textTheme.bodyMedium
+                      ?.copyWith(color: PlanazoColors.onSurfaceVariant),
                 ),
                 const SizedBox(height: 24),
                 TextFormField(

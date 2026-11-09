@@ -6,8 +6,6 @@ import 'api_service.dart';
 import 'auth_service.dart';
 import 'mock_backend.dart';
 
-/// Perfil de usuario: GET/PUT `/api/users/me` (contrato Postman).
-/// Las respuestas vienen envueltas en `{ usuario: {...} }`.
 class UsuarioService {
   UsuarioService._();
   static final UsuarioService instance = UsuarioService._();
@@ -26,14 +24,15 @@ class UsuarioService {
     }
   }
 
-  /// Guarda los cambios de perfil. Nunca envía `nombreUsuario` ni contraseña.
   Future<Usuario> actualizarPerfil({
     required String nombreCompleto,
     required String telefono,
   }) async {
     if (_usarMock) {
-      return MockBackend.instance
-          .actualizarPerfil(nombreCompleto: nombreCompleto, telefono: telefono);
+      return MockBackend.instance.actualizarPerfil(
+        nombreCompleto: nombreCompleto,
+        telefono: telefono,
+      );
     }
 
     try {

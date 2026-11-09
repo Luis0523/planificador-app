@@ -26,8 +26,6 @@ class AuthProvider extends ChangeNotifier {
   String? get error => _error;
   bool get autenticado => _status == AuthStatus.autenticado;
 
-  /// Al abrir la app se valida el token guardado contra el backend.
-  /// Si el token ya no sirve, se borra la sesión y se vuelve al login.
   Future<void> _init() async {
     final token = await ApiService.leerToken();
     if (token == null || token.isEmpty) {
@@ -50,19 +48,15 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> login(String correo, String contrasena) => _ejecutar(
-        () async {
-          final res = await _authService.login(correo, contrasena);
-          await ApiService.guardarToken(res.token);
-          await ApiService.guardarRequiereCambio(
-            res.requiereCambioContrasena,
-          );
-          _usuario = res.usuario;
-          _status = res.requiereCambioContrasena
-              ? AuthStatus.requiereCambio
-              : AuthStatus.autenticado;
-        },
-      );
+  Future<bool> login(String correo, String contrasena) => _ejecutar(() async {
+    final res = await _authService.login(correo, contrasena);
+    await ApiService.guardarToken(res.token);
+    await ApiService.guardarRequiereCambio(res.requiereCambioContrasena);
+    _usuario = res.usuario;
+    _status = res.requiereCambioContrasena
+        ? AuthStatus.requiereCambio
+        : AuthStatus.autenticado;
+  });
 
   Future<bool> registrar({
     required String nombreCompleto,
@@ -70,20 +64,18 @@ class AuthProvider extends ChangeNotifier {
     required String correo,
     required String telefono,
     required String contrasena,
-  }) =>
-      _ejecutar(
-        () => _authService.register(
-          nombreCompleto: nombreCompleto,
-          nombreUsuario: nombreUsuario,
-          correo: correo,
-          telefono: telefono,
-          contrasena: contrasena,
-        ),
-      );
+  }) => _ejecutar(
+    () => _authService.register(
+      nombreCompleto: nombreCompleto,
+      nombreUsuario: nombreUsuario,
+      correo: correo,
+      telefono: telefono,
+      contrasena: contrasena,
+    ),
+  );
 
-  Future<bool> recuperarContrasena(String correo) => _ejecutar(
-        () => _authService.forgotPassword(correo),
-      );
+  Future<bool> recuperarContrasena(String correo) =>
+      _ejecutar(() => _authService.forgotPassword(correo));
 
   Future<bool> cambiarContrasena(String nueva, String confirmacion) async {
     if (nueva != confirmacion) {
@@ -91,35 +83,26 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     }
-    return _ejecutar(
-      () async {
-        await _authService.changePassword(nueva, confirmacion);
-        await ApiService.guardarRequiereCambio(false);
-        _status = AuthStatus.autenticado;
-      },
-    );
+    return _ejecutar(() async {
+      await _authService.changePassword(nueva, confirmacion);
+      await ApiService.guardarRequiereCambio(false);
+      _status = AuthStatus.autenticado;
+    });
   }
 
-  /// Recarga el perfil del usuario desde `GET /api/users/me`.
-  Future<bool> cargarPerfil() => _ejecutar(
-        () async {
-          _usuario = await _usuarioService.obtenerPerfil();
-        },
-      );
+  Future<bool> cargarPerfil() => _ejecutar(() async {
+    _usuario = await _usuarioService.obtenerPerfil();
+  });
 
-  /// Guarda nombre completo y teléfono en `PUT /api/users/me`.
   Future<bool> actualizarPerfil({
     required String nombreCompleto,
     required String telefono,
-  }) =>
-      _ejecutar(
-        () async {
-          _usuario = await _usuarioService.actualizarPerfil(
-            nombreCompleto: nombreCompleto,
-            telefono: telefono,
-          );
-        },
-      );
+  }) => _ejecutar(() async {
+    _usuario = await _usuarioService.actualizarPerfil(
+      nombreCompleto: nombreCompleto,
+      telefono: telefono,
+    );
+  });
 
   Future<void> logout() async {
     await ApiService.limpiarSesion();

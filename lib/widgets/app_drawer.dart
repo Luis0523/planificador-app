@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../config/theme.dart';
 import '../providers/auth_provider.dart';
 
-/// Secciones navegables del menú lateral.
 class AppSecciones {
   AppSecciones._();
 
@@ -15,7 +14,6 @@ class AppSecciones {
   static const String perfil = 'perfil';
 }
 
-/// Menú lateral con los módulos de la aplicación y el cierre de sesión.
 class AppDrawer extends StatelessWidget {
   const AppDrawer({
     super.key,
@@ -148,17 +146,15 @@ class _Encabezado extends StatelessWidget {
             nombre,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: PlanazoColors.onPrimary,
-                ),
+            style: Theme.of(context).textTheme.titleLarge
+                ?.copyWith(color: PlanazoColors.onPrimary),
           ),
           Text(
             correo,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: PlanazoColors.primaryFixedDim,
-                ),
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: PlanazoColors.primaryFixedDim),
           ),
         ],
       ),

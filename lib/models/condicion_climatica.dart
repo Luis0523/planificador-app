@@ -17,8 +17,8 @@ class CondicionClimatica {
       );
 
   Map<String, Object?> toMap() => {
-        if (idCondicion != null) 'id_condicion': idCondicion,
-        'nombre': nombre,
-        'descripcion': descripcion,
-      };
+    if (idCondicion != null) 'id_condicion': idCondicion,
+    'nombre': nombre,
+    'descripcion': descripcion,
+  };
 }

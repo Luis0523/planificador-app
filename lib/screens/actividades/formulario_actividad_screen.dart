@@ -15,7 +15,6 @@ import '../../utils/validators.dart';
 import '../../widgets/clima_dia_chart.dart';
 import '../ubicaciones/formulario_ubicacion_screen.dart';
 
-/// Formulario de actividad: sirve para crear y editar.
 class FormularioActividadScreen extends StatefulWidget {
   const FormularioActividadScreen({super.key, this.actividad});
 
@@ -105,9 +104,11 @@ class _FormularioActividadScreenState extends State<FormularioActividadScreen> {
       return;
     }
     final hoy = DateTime.now();
-    final dias = DateTime(fecha.year, fecha.month, fecha.day)
-        .difference(DateTime(hoy.year, hoy.month, hoy.day))
-        .inDays;
+    final dias = DateTime(
+      fecha.year,
+      fecha.month,
+      fecha.day,
+    ).difference(DateTime(hoy.year, hoy.month, hoy.day)).inDays;
     if (dias < 0 || dias > 5) {
       _reiniciarClima();
       return;
@@ -151,7 +152,6 @@ class _FormularioActividadScreenState extends State<FormularioActividadScreen> {
     return null;
   }
 
-  /// Abre el formulario de ubicación para crearla "al vuelo" y la selecciona.
   Future<void> _crearUbicacionInline() async {
     final creada = await Navigator.of(context).push<Ubicacion>(
       MaterialPageRoute(builder: (_) => const FormularioUbicacionScreen()),
@@ -237,9 +237,8 @@ class _FormularioActividadScreenState extends State<FormularioActividadScreen> {
               if (fecha != null)
                 Text(
                   formatearFechaLegible(fecha),
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: PlanazoColors.onSurfaceVariant,
-                      ),
+                  style: Theme.of(context).textTheme.labelMedium
+                      ?.copyWith(color: PlanazoColors.onSurfaceVariant),
                 ),
             ],
           ),
@@ -249,9 +248,8 @@ class _FormularioActividadScreenState extends State<FormularioActividadScreen> {
           Text(
             'La línea muestra la temperatura (°C). Debajo de cada hora, '
             'el ícono indica la condición de ese momento.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: PlanazoColors.onSurfaceVariant,
-                ),
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: PlanazoColors.onSurfaceVariant),
           ),
         ],
       ),
@@ -259,9 +257,9 @@ class _FormularioActividadScreenState extends State<FormularioActividadScreen> {
   }
 
   Future<void> _cargarCondicionesSeleccionadas(int idActividad) async {
-    final ids = await context
-        .read<ActividadesProvider>()
-        .obtenerCondicionesIds(idActividad);
+    final ids = await context.read<ActividadesProvider>().obtenerCondicionesIds(
+      idActividad,
+    );
     if (!mounted) return;
     setState(() {
       _condicionesSeleccionadas
@@ -270,7 +268,6 @@ class _FormularioActividadScreenState extends State<FormularioActividadScreen> {
     });
   }
 
-  /// Condición pronosticada más cercana a la hora de inicio del evento.
   String? _condicionEnHora() {
     if (_puntosDia.isEmpty) return null;
     final fecha = _fecha;
@@ -278,7 +275,12 @@ class _FormularioActividadScreenState extends State<FormularioActividadScreen> {
     DateTime objetivo = fecha ?? DateTime.now();
     if (fecha != null && inicio != null) {
       objetivo = DateTime(
-          fecha.year, fecha.month, fecha.day, inicio.hour, inicio.minute);
+        fecha.year,
+        fecha.month,
+        fecha.day,
+        inicio.hour,
+        inicio.minute,
+      );
     }
     var mejor = _puntosDia.first;
     var diff = (mejor.fecha.difference(objetivo)).abs();
@@ -315,17 +317,15 @@ class _FormularioActividadScreenState extends State<FormularioActividadScreen> {
       children: [
         Text(
           'Condiciones climáticas deseables (opcional)',
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: PlanazoColors.onSurfaceVariant,
-              ),
+          style: Theme.of(context).textTheme.labelLarge
+              ?.copyWith(color: PlanazoColors.onSurfaceVariant),
         ),
         const SizedBox(height: 4),
         Text(
           'Marca cómo te gustaría que esté el clima. Si no marcas nada, se '
           'recomienda según el clima del día.',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: PlanazoColors.onSurfaceVariant,
-              ),
+          style: Theme.of(context).textTheme.bodySmall
+              ?.copyWith(color: PlanazoColors.onSurfaceVariant),
         ),
         const SizedBox(height: 8),
         if (condiciones.isEmpty)
@@ -374,9 +374,7 @@ class _FormularioActividadScreenState extends State<FormularioActividadScreen> {
                 Expanded(
                   child: Text(
                     nivel.etiqueta,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
+                    style: Theme.of(context).textTheme.titleSmall
                         ?.copyWith(color: nivel.color),
                   ),
                 ),
@@ -408,8 +406,10 @@ class _FormularioActividadScreenState extends State<FormularioActividadScreen> {
       idUbicacion: _idUbicacion!,
       descripcion: _descripcionCtrl.text.trim(),
       fecha: formatearFecha(_fecha!),
-      horaInicio:
-          formatearHora(hora: _horaInicio!.hour, minuto: _horaInicio!.minute),
+      horaInicio: formatearHora(
+        hora: _horaInicio!.hour,
+        minuto: _horaInicio!.minute,
+      ),
       horaFin: formatearHora(hora: _horaFin!.hour, minuto: _horaFin!.minute),
       tipoActividad: _tipoActividad,
       estado: _editando ? widget.actividad!.estado : Constants.estadoPendiente,
@@ -421,9 +421,10 @@ class _FormularioActividadScreenState extends State<FormularioActividadScreen> {
     final navigator = Navigator.of(context);
     final ok = _editando
         ? await provider.actualizar(
-            actividad, _condicionesSeleccionadas.toList())
-        : await provider.crear(
-            actividad, _condicionesSeleccionadas.toList());
+            actividad,
+            _condicionesSeleccionadas.toList(),
+          )
+        : await provider.crear(actividad, _condicionesSeleccionadas.toList());
 
     if (!mounted) return;
     messenger.showSnackBar(
@@ -472,7 +473,9 @@ class _FormularioActividadScreenState extends State<FormularioActividadScreen> {
                         items: [
                           for (final u in ubicaciones)
                             DropdownMenuItem(
-                                value: u.idUbicacion, child: Text(u.nombre)),
+                              value: u.idUbicacion,
+                              child: Text(u.nombre),
+                            ),
                         ],
                         onChanged: (v) {
                           setState(() => _idUbicacion = v);
@@ -550,9 +553,8 @@ class _FormularioActividadScreenState extends State<FormularioActividadScreen> {
                 const SizedBox(height: 24),
                 Text(
                   'Tipo de actividad',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: PlanazoColors.onSurfaceVariant,
-                      ),
+                  style: Theme.of(context).textTheme.labelLarge
+                      ?.copyWith(color: PlanazoColors.onSurfaceVariant),
                 ),
                 const SizedBox(height: 8),
                 SegmentedButton<String>(
@@ -608,9 +610,7 @@ class _FormularioActividadScreenState extends State<FormularioActividadScreen> {
           prefixIcon: Icon(Icons.calendar_month_outlined),
         ),
         child: Text(
-          fecha == null
-              ? 'Selecciona la fecha'
-              : formatearFechaLegible(fecha),
+          fecha == null ? 'Selecciona la fecha' : formatearFechaLegible(fecha),
           style: TextStyle(
             color: fecha == null
                 ? PlanazoColors.onSurfaceVariant

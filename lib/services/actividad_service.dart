@@ -5,14 +5,14 @@ import '../models/condicion_climatica.dart';
 import '../models/historial_actividad.dart';
 import '../utils/date_helpers.dart';
 
-/// CRUD local (SQLite) de actividades + validación de cruce de horarios
-/// + selección de condiciones climáticas deseables (relación N:M).
 class ActividadService {
   ActividadService._();
   static final ActividadService instance = ActividadService._();
 
-  Future<int> crear(Actividad actividad) =>
-      DatabaseHelper.instance.insert(Constants.tableActividades, actividad.toMap());
+  Future<int> crear(Actividad actividad) => DatabaseHelper.instance.insert(
+    Constants.tableActividades,
+    actividad.toMap(),
+  );
 
   Future<List<Actividad>> listarPorUbicacion(int idUbicacion) async {
     final filas = await DatabaseHelper.instance.query(
@@ -24,16 +24,13 @@ class ActividadService {
     return filas.map(Actividad.fromMap).toList();
   }
 
-  Future<int> actualizar(Actividad actividad) =>
-      DatabaseHelper.instance.update(
-        Constants.tableActividades,
-        actividad.toMap(),
-        where: 'id_actividad = ?',
-        whereArgs: [actividad.idActividad],
-      );
+  Future<int> actualizar(Actividad actividad) => DatabaseHelper.instance.update(
+    Constants.tableActividades,
+    actividad.toMap(),
+    where: 'id_actividad = ?',
+    whereArgs: [actividad.idActividad],
+  );
 
-  /// Actividades próximas (de hoy en adelante) pendientes o reagendadas.
-  /// Las de fechas pasadas ya no se consideran "pendientes".
   Future<List<Actividad>> listarPendientes(List<int> idUbicaciones) async {
     if (idUbicaciones.isEmpty) return [];
     final placeholders = List.filled(idUbicaciones.length, '?').join(', ');
@@ -53,16 +50,11 @@ class ActividadService {
   }
 
   Future<int> eliminar(int idActividad) => DatabaseHelper.instance.delete(
-        Constants.tableActividades,
-        where: 'id_actividad = ?',
-        whereArgs: [idActividad],
-      );
+    Constants.tableActividades,
+    where: 'id_actividad = ?',
+    whereArgs: [idActividad],
+  );
 
-  // ---- Validación de cruce de horarios ----
-
-  /// Devuelve la actividad (de la misma ubicación y fecha) cuyo rango
-  /// horario se cruza con [horaInicio]–[horaFin], o null si no hay cruce.
-  /// [idExcluida] ignora la actividad que se está editando.
   Future<Actividad?> obtenerActividadEnConflicto({
     required int idUbicacion,
     required String fecha,
@@ -77,24 +69,15 @@ class ActividadService {
     );
     for (final fila in filas) {
       final otra = Actividad.fromMap(fila);
-      if (seCruzan(
-        horaInicio,
-        horaFin,
-        otra.horaInicio,
-        otra.horaFin,
-      )) {
+      if (seCruzan(horaInicio, horaFin, otra.horaInicio, otra.horaFin)) {
         return otra;
       }
     }
     return null;
   }
 
-  /// Dos rangos [s1]–[e1] y [s2]–[e2] se cruzan si s1 < e2 && s2 < e1.
-  /// Las horas 'HH:mm' con ceros a la izquierda son comparables como texto.
   static bool seCruzan(String s1, String e1, String s2, String e2) =>
       s1.compareTo(e2) < 0 && s2.compareTo(e1) < 0;
-
-  // ---- Catálogo y relación con condiciones climáticas ----
 
   Future<List<CondicionClimatica>> listarCondiciones() async {
     final filas = await DatabaseHelper.instance.query(
@@ -104,7 +87,6 @@ class ActividadService {
     return filas.map(CondicionClimatica.fromMap).toList();
   }
 
-  /// Reemplaza las condiciones deseables de una actividad (N:M).
   Future<void> guardarCondiciones(
     int idActividad,
     List<int> idCondiciones,
@@ -125,7 +107,6 @@ class ActividadService {
     await batch.commit(noResult: true);
   }
 
-  /// Ids de las condiciones actuales de una actividad.
   Future<List<int>> obtenerCondiciones(int idActividad) async {
     final filas = await DatabaseHelper.instance.query(
       Constants.tableActividadCondicion,
@@ -135,7 +116,6 @@ class ActividadService {
     return filas.map((f) => f['id_condicion'] as int).toList();
   }
 
-  /// Condiciones agrupadas por actividad (para el listado).
   Future<Map<int, List<CondicionClimatica>>> condicionesPorActividad(
     List<int> idActividades,
   ) async {
@@ -149,8 +129,10 @@ class ActividadService {
       whereArgs: idActividades,
     );
 
-    final idsCondiciones =
-        pares.map((p) => p['id_condicion'] as int).toSet().toList();
+    final idsCondiciones = pares
+        .map((p) => p['id_condicion'] as int)
+        .toSet()
+        .toList();
     final condiciones = <int, CondicionClimatica>{};
     if (idsCondiciones.isNotEmpty) {
       final filas = await DatabaseHelper.instance.query(
@@ -175,20 +157,13 @@ class ActividadService {
     return resultado;
   }
 
-  // ---- Historial de actividades ----
-
-  /// Marca una actividad como finalizada y registra el cambio en el historial.
-  /// Operacion transaccional: UPDATE estado + INSERT historial.
   Future<void> marcarFinalizada(Actividad actividad) async {
     final ahora = DateTime.now().toIso8601String();
     final db = await DatabaseHelper.instance.database;
     await db.transaction((txn) async {
       await txn.update(
         Constants.tableActividades,
-        {
-          'estado': Constants.estadoFinalizada,
-          'fecha_actualizacion': ahora,
-        },
+        {'estado': Constants.estadoFinalizada, 'fecha_actualizacion': ahora},
         where: 'id_actividad = ?',
         whereArgs: [actividad.idActividad],
       );
@@ -204,8 +179,6 @@ class ActividadService {
     });
   }
 
-  /// Reagenda una actividad (cambia fecha y horario) y registra el historial.
-  /// Operacion transaccional: UPDATE fecha/horas/estado + INSERT historial.
   Future<void> reagendar(
     Actividad actividad, {
     required String nuevaFecha,
@@ -240,7 +213,6 @@ class ActividadService {
     });
   }
 
-  /// Historial de una actividad, ordenado del mas reciente al mas antiguo.
   Future<List<HistorialActividad>> listarHistorial(int idActividad) async {
     final filas = await DatabaseHelper.instance.query(
       Constants.tableHistorial,

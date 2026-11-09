@@ -13,7 +13,6 @@ import '../actividades_pendientes/actividades_pendientes_screen.dart';
 import '../ubicaciones/listado_ubicaciones_screen.dart';
 import '../usuario/perfil_screen.dart';
 
-/// Pantalla principal: menú lateral, barra inferior y las cuatro secciones.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -27,12 +26,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Espera el primer frame para no notificar providers durante el build.
     WidgetsBinding.instance.addPostFrameCallback((_) => _recargar());
   }
 
-  /// Vuelve a leer de SQLite y del clima. Se usa al iniciar, al cambiar de
-  /// pestaña y después de crear una actividad.
   Future<void> _recargar() async {
     final usuario = context.read<AuthProvider>().usuario;
     if (usuario == null) return;
@@ -48,7 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _seleccionarSeccion(String seccion) {
-    Navigator.of(context).pop(); // cierra el drawer
+    Navigator.of(context).pop();
     switch (seccion) {
       case AppSecciones.inicio:
         _cambiarIndice(0);
@@ -59,9 +55,8 @@ class _HomeScreenState extends State<HomeScreen> {
       case AppSecciones.ubicaciones:
         _cambiarIndice(3);
       case AppSecciones.perfil:
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const PerfilScreen()),
-        );
+        Navigator.of(context)
+            .push(MaterialPageRoute(builder: (_) => const PerfilScreen()));
     }
   }
 
@@ -76,16 +71,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _cerrarSesion() {
-    Navigator.of(context).pop(); // cierra el drawer
+    Navigator.of(context).pop();
     context.read<AuthProvider>().logout();
   }
 
   String get _seccionActual => switch (_indice) {
-        1 => AppSecciones.actividades,
-        2 => AppSecciones.pendientes,
-        3 => AppSecciones.ubicaciones,
-        _ => AppSecciones.inicio,
-      };
+    1 => AppSecciones.actividades,
+    2 => AppSecciones.pendientes,
+    3 => AppSecciones.ubicaciones,
+    _ => AppSecciones.inicio,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -112,9 +107,8 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(width: 8),
             Text(
               'Planazo',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+              style: Theme.of(context).textTheme.titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w800),
             ),
           ],
         ),
@@ -122,7 +116,10 @@ class _HomeScreenState extends State<HomeScreen> {
       body: IndexedStack(
         index: _indice,
         children: [
-          _DashboardInicio(onCrear: _abrirNuevaActividad, onRefrescar: _recargar),
+          _DashboardInicio(
+            onCrear: _abrirNuevaActividad,
+            onRefrescar: _recargar,
+          ),
           const ListadoActividadesScreen(),
           const ActividadesPendientesScreen(),
           const ListadoUbicacionesScreen(),
@@ -158,7 +155,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-/// Resumen inicial: saludo, contadores y las próximas actividades.
 class _DashboardInicio extends StatelessWidget {
   const _DashboardInicio({required this.onCrear, required this.onRefrescar});
 
@@ -170,8 +166,7 @@ class _DashboardInicio extends StatelessWidget {
     final auth = context.watch<AuthProvider>();
     final ubicaciones = context.watch<UbicacionesProvider>().ubicaciones;
     final pendientes = context.watch<ActividadesPendientesProvider>().items;
-    final nombre =
-        auth.usuario?.nombreCompleto.split(' ').first ?? 'Planazero';
+    final nombre = auth.usuario?.nombreCompleto.split(' ').first ?? 'Planazero';
 
     return RefreshIndicator(
       onRefresh: onRefrescar,
@@ -186,9 +181,8 @@ class _DashboardInicio extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             '¿Qué planazo armamos hoy?',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: PlanazoColors.onSurfaceVariant,
-                ),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: PlanazoColors.onSurfaceVariant),
           ),
           const SizedBox(height: 24),
           Row(
@@ -218,10 +212,7 @@ class _DashboardInicio extends StatelessWidget {
           if (pendientes.isEmpty)
             _EstadoVacio(onCrear: onCrear)
           else ...[
-            Text(
-              'Lo que viene',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text('Lo que viene', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
             for (final item in pendientes.take(3))
               Card(
@@ -288,17 +279,14 @@ class _TarjetaResumen extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             titulo,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: colorIcono,
-                ),
+            style: Theme.of(context).textTheme.labelLarge
+                ?.copyWith(color: colorIcono),
           ),
           const SizedBox(height: 4),
           Text(
             '$conteo',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: colorIcono,
-                  fontWeight: FontWeight.w800,
-                ),
+            style: Theme.of(context).textTheme.headlineMedium
+                ?.copyWith(color: colorIcono, fontWeight: FontWeight.w800),
           ),
         ],
       ),
@@ -335,9 +323,8 @@ class _EstadoVacio extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             'No tienes actividades próximas. ¡Crea la primera!',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: PlanazoColors.onSurfaceVariant,
-                ),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: PlanazoColors.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),

@@ -14,9 +14,10 @@ Future<void> _iniciarApp(WidgetTester tester) async {
 
 Future<void> _login(WidgetTester tester) async {
   await tester.enterText(
-      find.byKey(const Key('login_correo')), 'demo@planificador.com');
-  await tester.enterText(
-      find.byKey(const Key('login_contrasena')), '123456');
+    find.byKey(const Key('login_correo')),
+    'demo@planificador.com',
+  );
+  await tester.enterText(find.byKey(const Key('login_contrasena')), '123456');
   await tester.tap(find.text('Iniciar sesión'));
   await tester.pumpAndSettle();
 }
@@ -48,8 +49,9 @@ void main() {
     expect(find.text('Crear planazo'), findsOneWidget);
   });
 
-  testWidgets('el drawer muestra las secciones y cierra sesión',
-      (tester) async {
+  testWidgets('el drawer muestra las secciones y cierra sesión', (
+    tester,
+  ) async {
     await _iniciarApp(tester);
     await _login(tester);
 
@@ -67,20 +69,16 @@ void main() {
     await _iniciarApp(tester);
     await _login(tester);
 
-    // Inicio (dashboard)
     expect(find.text('¿Qué planazo armamos hoy?'), findsOneWidget);
 
-    // Actividades (sin ubicaciones en este entorno -> guía para crearlas)
     await tester.tap(find.byKey(const Key('nav_actividades')));
     await tester.pumpAndSettle();
     expect(find.text('Primero crea una ubicación'), findsOneWidget);
 
-    // Pendientes (pantalla real de la Fase 7 — sin datos muestra estado vacio)
     await tester.tap(find.byKey(const Key('nav_pendientes')));
     await tester.pumpAndSettle();
     expect(find.textContaining('Sin actividades pendientes'), findsOneWidget);
 
-    // Vuelta al inicio
     await tester.tap(find.byKey(const Key('nav_inicio')));
     await tester.pumpAndSettle();
     expect(find.text('¿Qué planazo armamos hoy?'), findsOneWidget);

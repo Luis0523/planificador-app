@@ -6,8 +6,6 @@ import '../../models/usuario.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/validators.dart';
 
-/// Perfil de usuario (Fase 4): muestra datos en solo lectura y permite
-/// editar nombre completo y teléfono contra `GET/PUT /api/users/me`.
 class PerfilScreen extends StatefulWidget {
   const PerfilScreen({super.key});
 
@@ -24,17 +22,15 @@ class _PerfilScreenState extends State<PerfilScreen> {
   void initState() {
     super.initState();
     final auth = context.read<AuthProvider>();
-    _nombreCtrl =
-        TextEditingController(text: auth.usuario?.nombreCompleto ?? '');
+    _nombreCtrl = TextEditingController(
+      text: auth.usuario?.nombreCompleto ?? '',
+    );
     _telefonoCtrl = TextEditingController(text: auth.usuario?.telefono ?? '');
-    // Refresca los datos (GET /api/users/me) después del primer frame
-    // para no notificar listeners durante el build.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _cargarPerfil();
     });
   }
 
-  /// Refresca los datos al entrar (GET /api/users/me).
   Future<void> _cargarPerfil() async {
     final auth = context.read<AuthProvider>();
     final ok = await auth.cargarPerfil();
@@ -109,7 +105,8 @@ class _PerfilScreenState extends State<PerfilScreen> {
                   etiqueta: 'Contraseña',
                   icono: Icons.lock_outline,
                   valor: '••••••••',
-                  ayuda: 'La contraseña se gestiona en el flujo de recuperación.',
+                  ayuda:
+                      'La contraseña se gestiona en el flujo de recuperación.',
                 ),
                 const SizedBox(height: 24),
                 const _TituloSeccion('Información editable'),
@@ -215,9 +212,8 @@ class _Encabezado extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           usuario?.correo ?? '',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: PlanazoColors.onSurfaceVariant,
-              ),
+          style: Theme.of(context).textTheme.bodyMedium
+              ?.copyWith(color: PlanazoColors.onSurfaceVariant),
           textAlign: TextAlign.center,
         ),
       ],
@@ -236,9 +232,8 @@ class _TituloSeccion extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
         titulo,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: PlanazoColors.onSurfaceVariant,
-            ),
+        style: Theme.of(context).textTheme.labelLarge
+            ?.copyWith(color: PlanazoColors.onSurfaceVariant),
       ),
     );
   }

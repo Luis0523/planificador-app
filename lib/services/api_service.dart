@@ -3,9 +3,6 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../config/constants.dart';
 
-/// Cliente HTTP configurado para el backend propio.
-/// Se encarga de adjuntar el JWT (Authorization: Bearer) a cada request
-/// y de limpiar el token si el servidor responde 401.
 class ApiService {
   ApiService._();
   static final ApiService instance = ApiService._();
@@ -18,12 +15,7 @@ class ApiService {
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 15),
     ),
-  )..interceptors.addAll([
-      _JwtInterceptor(),
-      _UnauthorizedInterceptor(),
-    ]);
-
-  // ---- Token (JWT): siempre en flutter_secure_storage, nunca en SQLite ----
+  )..interceptors.addAll([_JwtInterceptor(), _UnauthorizedInterceptor()]);
 
   static Future<void> guardarToken(String token) =>
       _storage.write(key: Constants.storageKeyJwt, value: token);
@@ -34,13 +26,8 @@ class ApiService {
   static Future<void> limpiarToken() =>
       _storage.delete(key: Constants.storageKeyJwt);
 
-  /// Recuerda si el usuario entró con contraseña temporal. Así, si cierra la
-  /// app antes de cambiarla, al volver se le sigue exigiendo el cambio.
   static Future<void> guardarRequiereCambio(bool requiere) => requiere
-      ? _storage.write(
-          key: Constants.storageKeyCambioContrasena,
-          value: 'true',
-        )
+      ? _storage.write(key: Constants.storageKeyCambioContrasena, value: 'true')
       : _storage.delete(key: Constants.storageKeyCambioContrasena);
 
   static Future<bool> leerRequiereCambio() async =>
@@ -51,10 +38,6 @@ class ApiService {
     await _storage.delete(key: Constants.storageKeyCambioContrasena);
   }
 
-  /// Extrae el mensaje de error del backend según el contrato:
-  /// - validación: `{ error, detalles: [{ campo, mensaje }] }`
-  /// - error simple / auth: `{ error: "..." }`
-  /// - éxito con aviso: `{ mensaje: "..." }`
   static String mensajeErrorDio(DioException e) {
     final data = e.response?.data;
     if (data is Map) {

@@ -10,8 +10,6 @@ class ClimaException implements Exception {
   String toString() => message;
 }
 
-/// Clima de una coordenada y fecha, ya traducido al catálogo local:
-/// Soleado, Lluvioso, Nublado, Ventoso, Templado o Nevado.
 class ClimaInfo {
   final String condicion;
   final String descripcion;
@@ -29,7 +27,6 @@ class ClimaInfo {
     required this.fecha,
   });
 
-  /// Convierte una entrada de OpenWeatherMap a [ClimaInfo].
   factory ClimaInfo.fromMap(Map<String, dynamic> data) {
     final clima = (data['weather'] as List).first as Map<String, dynamic>;
     final principal = data['main'] as Map;
@@ -50,13 +47,12 @@ class ClimaInfo {
     );
   }
 
-  /// Traduce las condiciones de OpenWeatherMap al catálogo de la app.
   static String _traducirCondicion({
     required String clima,
     required double temperatura,
     required double viento,
   }) {
-    if (viento >= 10.8) return 'Ventoso'; // ~39 km/h
+    if (viento >= 10.8) return 'Ventoso';
     switch (clima) {
       case 'Thunderstorm':
       case 'Drizzle':
@@ -86,8 +82,6 @@ class ClimaInfo {
   }
 }
 
-/// Consulta el pronóstico de OpenWeatherMap directamente desde el teléfono.
-/// Se usa el mismo endpoint para hoy y para días futuros (pronóstico a 5 días).
 class ClimaService {
   ClimaService._();
   static final ClimaService instance = ClimaService._();
@@ -101,7 +95,6 @@ class ClimaService {
     ),
   );
 
-  /// Clima más cercano a la fecha/hora indicada.
   Future<ClimaInfo> obtenerClima({
     required double latitud,
     required double longitud,
@@ -114,16 +107,13 @@ class ClimaService {
     return _masCercano(puntos, fecha);
   }
 
-  /// Puntos del pronóstico del día indicado (cada 3 horas), para la gráfica.
   Future<List<ClimaInfo>> obtenerPronosticoDia({
     required double latitud,
     required double longitud,
     required DateTime fecha,
   }) async {
     final puntos = await _consultarPronostico(latitud, longitud);
-    return puntos
-        .where((p) => _esMismoDia(p.fecha, fecha))
-        .toList()
+    return puntos.where((p) => _esMismoDia(p.fecha, fecha)).toList()
       ..sort((a, b) => a.fecha.compareTo(b.fecha));
   }
 
@@ -132,7 +122,9 @@ class ClimaService {
     double longitud,
   ) async {
     if (Constants.weatherApiKey.isEmpty) {
-      throw ClimaException('Falta configurar WEATHER_API_KEY en el archivo .env');
+      throw ClimaException(
+        'Falta configurar WEATHER_API_KEY en el archivo .env',
+      );
     }
 
     try {
@@ -148,10 +140,7 @@ class ClimaService {
       );
       final data = res.data as Map<String, dynamic>;
       final lista = data['list'] as List? ?? [];
-      return lista
-          .cast<Map<String, dynamic>>()
-          .map(ClimaInfo.fromMap)
-          .toList();
+      return lista.cast<Map<String, dynamic>>().map(ClimaInfo.fromMap).toList();
     } on DioException catch (e) {
       throw ClimaException(_mensajeError(e));
     }

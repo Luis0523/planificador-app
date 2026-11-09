@@ -6,7 +6,6 @@ import '../services/probabilidad_service.dart';
 import '../utils/date_helpers.dart';
 import 'clima_indicator.dart';
 
-/// Tarjeta de una actividad pendiente: datos, clima, probabilidad y acciones.
 class ActividadPendienteCard extends StatelessWidget {
   const ActividadPendienteCard({
     super.key,
@@ -61,10 +60,8 @@ class ActividadPendienteCard extends StatelessWidget {
                         Text(
                           '${formatearFechaLegible(fecha)} · '
                           '${actividad.horaInicio}–${actividad.horaFin}',
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: PlanazoColors.onSurfaceVariant,
-                                  ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: PlanazoColors.onSurfaceVariant),
                         ),
                       Row(
                         children: [
@@ -78,9 +75,7 @@ class ActividadPendienteCard extends StatelessWidget {
                             child: Text(
                               item.ubicacion.nombre,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
+                              style: Theme.of(context).textTheme.labelSmall
                                   ?.copyWith(
                                     color: PlanazoColors.onSurfaceVariant,
                                   ),
@@ -106,9 +101,8 @@ class ActividadPendienteCard extends StatelessWidget {
                 children: [
                   Text(
                     'Ideal con:',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: PlanazoColors.onSurfaceVariant,
-                        ),
+                    style: Theme.of(context).textTheme.labelSmall
+                        ?.copyWith(color: PlanazoColors.onSurfaceVariant),
                   ),
                   for (final condicion in item.condicionesDeseables)
                     Chip(
@@ -159,9 +153,8 @@ class ActividadPendienteCard extends StatelessWidget {
         Expanded(
           child: Text(
             item.errorClima ?? 'Cargando clima...',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: PlanazoColors.onSurfaceVariant,
-                ),
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: PlanazoColors.onSurfaceVariant),
           ),
         ),
       ],
@@ -189,10 +182,8 @@ class _BadgeProbabilidad extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             '${nivel.etiquetaCorta} ${nivel.porcentaje}%',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: nivel.color,
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(context).textTheme.labelSmall
+                ?.copyWith(color: nivel.color, fontWeight: FontWeight.w700),
           ),
         ],
       ),

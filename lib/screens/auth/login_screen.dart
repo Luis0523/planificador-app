@@ -39,9 +39,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _irRegistro() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const RegistroScreen()),
-    );
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => const RegistroScreen()));
   }
 
   void _irRecuperar() {
@@ -69,9 +68,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   Text(
                     'Planazo',
                     style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                          color: PlanazoColors.primary,
-                          fontWeight: FontWeight.w800,
-                        ),
+                      color: PlanazoColors.primary,
+                      fontWeight: FontWeight.w800,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),

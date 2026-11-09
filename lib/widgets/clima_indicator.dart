@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../config/theme.dart';
 import '../services/clima_service.dart';
 
-/// Muestra un pronóstico del clima con ícono/color según la condición.
 class ClimaIndicator extends StatelessWidget {
   const ClimaIndicator({super.key, required this.clima});
 
@@ -49,9 +48,8 @@ class ClimaIndicator extends StatelessWidget {
               ),
               Text(
                 clima.descripcion,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: PlanazoColors.onSurfaceVariant,
-                    ),
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: PlanazoColors.onSurfaceVariant),
               ),
             ],
           ),

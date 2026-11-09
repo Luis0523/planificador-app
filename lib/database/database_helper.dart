@@ -4,17 +4,12 @@ import 'package:sqflite/sqflite.dart';
 
 import '../config/constants.dart';
 
-/// Única clase que abre y crea la base de datos SQLite local.
-///
-/// Aquí están todas las instrucciones SQL para que el archivo se pueda
-/// explicar de arriba a abajo sin saltar entre varios archivos.
 class DatabaseHelper {
   DatabaseHelper._();
   static final DatabaseHelper instance = DatabaseHelper._();
 
   static Database? _database;
 
-  /// Permite que las pruebas usen una base en memoria (':memory:').
   @visibleForTesting
   static String? databasePathOverride;
 
@@ -24,7 +19,8 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDatabase() async {
-    final ruta = databasePathOverride ??
+    final ruta =
+        databasePathOverride ??
         join(await getDatabasesPath(), Constants.dbName);
     return openDatabase(
       ruta,
@@ -35,7 +31,6 @@ class DatabaseHelper {
     );
   }
 
-  /// Sin esta instrucción, ON DELETE CASCADE no funciona en SQLite.
   Future<void> _onConfigure(Database db) async {
     await db.execute('PRAGMA foreign_keys = ON');
   }
@@ -111,11 +106,13 @@ class DatabaseHelper {
     await _precargarCondiciones(db);
   }
 
-  /// Catálogo fijo de condiciones climáticas del enunciado.
   Future<void> _precargarCondiciones(Database db) async {
     const condiciones = [
       {'nombre': 'Soleado', 'descripcion': 'Cielo despejado, sol'},
-      {'nombre': 'Lluvioso', 'descripcion': 'Lluvia o probabilidad alta de lluvia'},
+      {
+        'nombre': 'Lluvioso',
+        'descripcion': 'Lluvia o probabilidad alta de lluvia',
+      },
       {'nombre': 'Nublado', 'descripcion': 'Cielo cubierto'},
       {'nombre': 'Ventoso', 'descripcion': 'Vientos fuertes'},
       {'nombre': 'Templado', 'descripcion': 'Temperatura agradable'},
@@ -128,8 +125,6 @@ class DatabaseHelper {
     await batch.commit(noResult: true);
   }
 
-  /// En desarrollo no hay datos que conservar: si cambia el esquema se
-  /// recrean las tablas (los hijos primero para respetar las llaves foráneas).
   Future<void> _onUpgrade(Database db, int anterior, int nueva) async {
     for (final tabla in [
       Constants.tableActividadCondicion,
@@ -142,8 +137,6 @@ class DatabaseHelper {
     }
     await _onCreate(db, nueva);
   }
-
-  // ---- Operaciones genéricas usadas por los services ----
 
   Future<int> insert(String tabla, Map<String, Object?> valores) async {
     final db = await database;

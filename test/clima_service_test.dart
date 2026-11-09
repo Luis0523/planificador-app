@@ -8,15 +8,14 @@ Map<String, dynamic> _respuesta({
   double temp = 20,
   double viento = 3,
   int dt = 0,
-}) =>
-    {
-      'weather': [
-        {'main': main, 'description': descripcion},
-      ],
-      'main': {'temp': temp, 'humidity': 50},
-      'wind': {'speed': viento},
-      'dt': dt,
-    };
+}) => {
+  'weather': [
+    {'main': main, 'description': descripcion},
+  ],
+  'main': {'temp': temp, 'humidity': 50},
+  'wind': {'speed': viento},
+  'dt': dt,
+};
 
 void main() {
   group('ClimaInfo.fromMap mapea al catálogo de condiciones', () {
@@ -52,7 +51,8 @@ void main() {
 
     test('viento fuerte -> Ventoso (aunque sea Rain)', () {
       final c = ClimaInfo.fromMap(
-          _respuesta(main: 'Rain', viento: 15, temp: 18));
+        _respuesta(main: 'Rain', viento: 15, temp: 18),
+      );
       expect(c.condicion, 'Ventoso');
     });
 
@@ -62,12 +62,9 @@ void main() {
     });
 
     test('conserva temperatura, viento, humedad y fecha', () {
-      final c = ClimaInfo.fromMap(_respuesta(
-        main: 'Clear',
-        temp: 25.5,
-        viento: 4.2,
-        dt: 1700000000,
-      ));
+      final c = ClimaInfo.fromMap(
+        _respuesta(main: 'Clear', temp: 25.5, viento: 4.2, dt: 1700000000),
+      );
       expect(c.temperaturaC, 25.5);
       expect(c.vientoMs, 4.2);
       expect(c.humedad, 50);
@@ -77,7 +74,6 @@ void main() {
 
   group('ClimaService sin API key', () {
     test('lanza un error claro en vez de inventar datos', () async {
-      // En tests dotenv no está cargado => weatherApiKey vacía.
       expect(
         () => ClimaService.instance.obtenerClima(
           latitud: 19.4326,

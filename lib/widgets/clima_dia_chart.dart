@@ -5,12 +5,6 @@ import '../config/theme.dart';
 import '../services/clima_service.dart';
 import 'clima_indicator.dart';
 
-/// Gráfica de la temperatura del día.
-///
-/// - Eje Y: temperatura en °C.
-/// - Eje X: cada punto del pronóstico (cada 3 horas) con su hora.
-/// - Debajo de cada hora se muestra el ícono de la condición de ese momento
-///   (Soleado, Nublado, Lluvioso, etc.).
 class ClimaDiaChart extends StatelessWidget {
   const ClimaDiaChart({super.key, required this.puntos});
 
@@ -20,10 +14,12 @@ class ClimaDiaChart extends StatelessWidget {
   Widget build(BuildContext context) {
     if (puntos.isEmpty) return const SizedBox.shrink();
 
-    final minimo =
-        puntos.map((p) => p.temperaturaC).reduce((a, b) => a < b ? a : b);
-    final maximo =
-        puntos.map((p) => p.temperaturaC).reduce((a, b) => a > b ? a : b);
+    final minimo = puntos
+        .map((p) => p.temperaturaC)
+        .reduce((a, b) => a < b ? a : b);
+    final maximo = puntos
+        .map((p) => p.temperaturaC)
+        .reduce((a, b) => a > b ? a : b);
     final minY = (minimo - 2).floorToDouble();
     final maxY = (maximo + 2).ceilToDouble();
     final intervalo = ((maxY - minY) / 4).ceilToDouble().clamp(1.0, 20.0);
@@ -35,16 +31,14 @@ class ClimaDiaChart extends StatelessWidget {
           children: [
             Text(
               'Temperatura (°C)',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: PlanazoColors.onSurfaceVariant,
-                  ),
+              style: Theme.of(context).textTheme.labelSmall
+                  ?.copyWith(color: PlanazoColors.onSurfaceVariant),
             ),
             const Spacer(),
             Text(
               '${minimo.round()}° – ${maximo.round()}°',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: PlanazoColors.onSurfaceVariant,
-                  ),
+              style: Theme.of(context).textTheme.labelSmall
+                  ?.copyWith(color: PlanazoColors.onSurfaceVariant),
             ),
           ],
         ),
@@ -131,7 +125,6 @@ class ClimaDiaChart extends StatelessWidget {
     );
   }
 
-  /// Hora + ícono de la condición de ese punto del pronóstico.
   Widget _horaYCondicion(double value, TitleMeta meta) {
     final indice = value.round();
     if (indice < 0 || indice >= puntos.length) {
@@ -146,10 +139,7 @@ class ClimaDiaChart extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icono, size: 14, color: color),
-        Text(
-          '${hora}h',
-          style: const TextStyle(fontSize: 9),
-        ),
+        Text('${hora}h', style: const TextStyle(fontSize: 9)),
       ],
     );
   }

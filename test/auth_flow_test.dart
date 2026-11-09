@@ -35,23 +35,31 @@ void main() {
     expect(find.text('¿Qué planazo armamos hoy?'), findsOneWidget);
   });
 
-  testWidgets('login con contraseña temporal fuerza el cambio de contraseña',
-      (tester) async {
+  testWidgets('login con contraseña temporal fuerza el cambio de contraseña', (
+    tester,
+  ) async {
     await _iniciarApp(tester);
 
     await _login(tester, contrasena: 'temporal123');
 
     expect(find.text('Cambiar contraseña'), findsOneWidget);
 
-    // Contraseñas que no coinciden: se rechaza.
-    await tester.enterText(find.byKey(const Key('nueva_contrasena')), 'nueva123');
-    await tester.enterText(find.byKey(const Key('confirmar_contrasena')), 'distinta');
+    await tester.enterText(
+      find.byKey(const Key('nueva_contrasena')),
+      'nueva123',
+    );
+    await tester.enterText(
+      find.byKey(const Key('confirmar_contrasena')),
+      'distinta',
+    );
     await tester.tap(find.text('Guardar'));
     await tester.pumpAndSettle();
     expect(find.text('Las contraseñas no coinciden'), findsOneWidget);
 
-    // Corrige la confirmación: ahora sí llega al Home.
-    await tester.enterText(find.byKey(const Key('confirmar_contrasena')), 'nueva123');
+    await tester.enterText(
+      find.byKey(const Key('confirmar_contrasena')),
+      'nueva123',
+    );
     await tester.tap(find.text('Guardar'));
     await tester.pumpAndSettle();
     expect(find.text('¿Qué planazo armamos hoy?'), findsOneWidget);
@@ -82,28 +90,49 @@ void main() {
     await tester.tap(find.text('Regístrate'));
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.byKey(const Key('registro_nombre_completo')), 'Ana Pérez');
-    await tester.enterText(find.byKey(const Key('registro_nombre_usuario')), 'ana');
-    await tester.enterText(find.byKey(const Key('registro_correo')), 'ana@correo.com');
-    await tester.enterText(find.byKey(const Key('registro_telefono')), '5550001111');
-    await tester.enterText(find.byKey(const Key('registro_contrasena')), 'secreta1');
-    await tester.enterText(find.byKey(const Key('registro_confirmar')), 'secreta1');
+    await tester.enterText(
+      find.byKey(const Key('registro_nombre_completo')),
+      'Ana Pérez',
+    );
+    await tester.enterText(
+      find.byKey(const Key('registro_nombre_usuario')),
+      'ana',
+    );
+    await tester.enterText(
+      find.byKey(const Key('registro_correo')),
+      'ana@correo.com',
+    );
+    await tester.enterText(
+      find.byKey(const Key('registro_telefono')),
+      '5550001111',
+    );
+    await tester.enterText(
+      find.byKey(const Key('registro_contrasena')),
+      'secreta1',
+    );
+    await tester.enterText(
+      find.byKey(const Key('registro_confirmar')),
+      'secreta1',
+    );
     await tester.ensureVisible(find.text('Crear cuenta'));
     await tester.tap(find.text('Crear cuenta'));
     await tester.pumpAndSettle();
 
     expect(find.text('Inicia sesión'), findsOneWidget);
-    expect(find.text('Cuenta creada. Ahora puedes iniciar sesión.'), findsOneWidget);
+    expect(
+      find.text('Cuenta creada. Ahora puedes iniciar sesión.'),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('logout desde el drawer regresa a login y no conserva sesión',
-      (tester) async {
+  testWidgets('logout desde el drawer regresa a login y no conserva sesión', (
+    tester,
+  ) async {
     await _iniciarApp(tester);
     await _login(tester);
 
     expect(find.text('¿Qué planazo armamos hoy?'), findsOneWidget);
 
-    // Abre el drawer y cierra sesión.
     await tester.tap(find.byIcon(Icons.menu));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('drawer_cerrar_sesion')));
@@ -111,7 +140,6 @@ void main() {
 
     expect(find.text('Inicia sesión'), findsOneWidget);
 
-    // Al reabrir la app (nuevo tree) ya no hay sesión activa.
     await tester.pumpWidget(const SizedBox());
     await _iniciarApp(tester);
     expect(find.text('Inicia sesión'), findsOneWidget);

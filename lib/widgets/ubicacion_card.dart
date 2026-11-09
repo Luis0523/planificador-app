@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../config/theme.dart';
 import '../models/ubicacion.dart';
 
-/// Tarjeta de ubicación para el listado (estilo Planazo).
 class UbicacionCard extends StatelessWidget {
   const UbicacionCard({
     super.key,
@@ -51,9 +50,8 @@ class UbicacionCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         ubicacion.direccion!,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: PlanazoColors.onSurfaceVariant,
-                            ),
+                        style: Theme.of(context).textTheme.bodyMedium
+                            ?.copyWith(color: PlanazoColors.onSurfaceVariant),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -62,9 +60,8 @@ class UbicacionCard extends StatelessWidget {
                     Text(
                       '${ubicacion.latitud.toStringAsFixed(4)}, '
                       '${ubicacion.longitud.toStringAsFixed(4)}',
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: PlanazoColors.outline,
-                          ),
+                      style: Theme.of(context).textTheme.labelMedium
+                          ?.copyWith(color: PlanazoColors.outline),
                     ),
                   ],
                 ),

@@ -20,25 +20,24 @@ class Ubicacion {
   });
 
   factory Ubicacion.fromMap(Map<String, Object?> map) => Ubicacion(
-        idUbicacion: map['id_ubicacion'] as int?,
-        idUsuario: (map['id_usuario'] ?? '') as String,
-        nombre: map['nombre'] as String,
-        direccion: map['direccion'] as String?,
-        latitud: (map['latitud'] as num).toDouble(),
-        longitud: (map['longitud'] as num).toDouble(),
-        fechaCreacion: map['fecha_creacion'] as String,
-        fechaActualizacion: map['fecha_actualizacion'] as String,
-      );
+    idUbicacion: map['id_ubicacion'] as int?,
+    idUsuario: (map['id_usuario'] ?? '') as String,
+    nombre: map['nombre'] as String,
+    direccion: map['direccion'] as String?,
+    latitud: (map['latitud'] as num).toDouble(),
+    longitud: (map['longitud'] as num).toDouble(),
+    fechaCreacion: map['fecha_creacion'] as String,
+    fechaActualizacion: map['fecha_actualizacion'] as String,
+  );
 
   Map<String, Object?> toMap() => {
-        if (idUbicacion != null) 'id_ubicacion': idUbicacion,
-        'id_usuario': idUsuario,
-        'nombre': nombre,
-        'direccion': direccion,
-        'latitud': latitud,
-        'longitud': longitud,
-        'fecha_creacion': fechaCreacion,
-        'fecha_actualizacion': fechaActualizacion,
-      };
-
+    if (idUbicacion != null) 'id_ubicacion': idUbicacion,
+    'id_usuario': idUsuario,
+    'nombre': nombre,
+    'direccion': direccion,
+    'latitud': latitud,
+    'longitud': longitud,
+    'fecha_creacion': fechaCreacion,
+    'fecha_actualizacion': fechaActualizacion,
+  };
 }

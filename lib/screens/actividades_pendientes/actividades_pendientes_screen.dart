@@ -9,9 +9,6 @@ import '../../services/probabilidad_service.dart';
 import '../../utils/date_helpers.dart';
 import '../../widgets/actividad_pendiente_card.dart';
 
-/// Pantalla de Actividades Pendientes (Fase 7).
-/// Muestra las actividades proximas con clima real, indicador de probabilidad,
-/// filtros y acciones de Finalizar / Reagendar.
 class ActividadesPendientesScreen extends StatefulWidget {
   const ActividadesPendientesScreen({super.key});
 
@@ -33,10 +30,7 @@ class _ActividadesPendientesScreenState
     }
   }
 
-  Future<void> _finalizar(
-    BuildContext context,
-    ActividadConClima item,
-  ) async {
+  Future<void> _finalizar(BuildContext context, ActividadConClima item) async {
     final confirmado = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -74,10 +68,7 @@ class _ActividadesPendientesScreenState
     );
   }
 
-  Future<void> _reagendar(
-    BuildContext context,
-    ActividadConClima item,
-  ) async {
+  Future<void> _reagendar(BuildContext context, ActividadConClima item) async {
     final fecha = await showDatePicker(
       context: context,
       initialDate: DateTime.tryParse(item.actividad.fecha) ?? DateTime.now(),
@@ -149,12 +140,8 @@ class _ActividadesPendientesScreenState
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
-          // --- Filtros ---
-          SliverToBoxAdapter(
-            child: _BarraFiltros(provider: provider),
-          ),
+          SliverToBoxAdapter(child: _BarraFiltros(provider: provider)),
 
-          // --- Contenido ---
           if (provider.cargando)
             const SliverFillRemaining(
               child: Center(child: CircularProgressIndicator()),
@@ -167,24 +154,19 @@ class _ActividadesPendientesScreenState
               ),
             )
           else if (provider.items.isEmpty)
-            const SliverFillRemaining(
-              child: _EstadoVacio(),
-            )
+            const SliverFillRemaining(child: _EstadoVacio())
           else
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
               sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final item = provider.items[index];
-                    return ActividadPendienteCard(
-                      item: item,
-                      onFinalizar: () => _finalizar(context, item),
-                      onReagendar: () => _reagendar(context, item),
-                    );
-                  },
-                  childCount: provider.items.length,
-                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final item = provider.items[index];
+                  return ActividadPendienteCard(
+                    item: item,
+                    onFinalizar: () => _finalizar(context, item),
+                    onReagendar: () => _reagendar(context, item),
+                  );
+                }, childCount: provider.items.length),
               ),
             ),
         ],
@@ -193,19 +175,15 @@ class _ActividadesPendientesScreenState
   }
 }
 
-// ---------------------------------------------------------------------------
-// Barra de filtros
-// ---------------------------------------------------------------------------
-
 class _BarraFiltros extends StatelessWidget {
   const _BarraFiltros({required this.provider});
   final ActividadesPendientesProvider provider;
 
   @override
   Widget build(BuildContext context) {
-    final ubicaciones =
-        context.watch<UbicacionesProvider>().ubicaciones;
-    final hayFiltros = provider.filtroIdUbicacion != null ||
+    final ubicaciones = context.watch<UbicacionesProvider>().ubicaciones;
+    final hayFiltros =
+        provider.filtroIdUbicacion != null ||
         provider.filtroProbabilidad != null ||
         provider.soloProximos;
 
@@ -218,19 +196,16 @@ class _BarraFiltros extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                // Toggle "Proximos 7 dias"
                 FilterChip(
                   key: const Key('filtro_proximos'),
                   label: const Text('Proximos 7 dias'),
                   selected: provider.soloProximos,
-                  onSelected: (v) =>
-                      provider.cambiarSoloProximos(v),
+                  onSelected: (v) => provider.cambiarSoloProximos(v),
                   selectedColor: PlanazoColors.primaryContainer,
                   checkmarkColor: PlanazoColors.onPrimaryContainer,
                 ),
                 const SizedBox(width: 8),
 
-                // Filtro por probabilidad
                 for (final nivel in ProbabilidadNivel.values) ...[
                   FilterChip(
                     label: Row(
@@ -242,15 +217,13 @@ class _BarraFiltros extends StatelessWidget {
                       ],
                     ),
                     selected: provider.filtroProbabilidad == nivel,
-                    onSelected: (v) => provider.cambiarFiltroProbabilidad(
-                      v ? nivel : null,
-                    ),
+                    onSelected: (v) =>
+                        provider.cambiarFiltroProbabilidad(v ? nivel : null),
                     selectedColor: nivel.colorFondo,
                   ),
                   const SizedBox(width: 8),
                 ],
 
-                // Filtro por ubicacion
                 if (ubicaciones.isNotEmpty)
                   DropdownButton<int?>(
                     value: provider.filtroIdUbicacion,
@@ -273,7 +246,6 @@ class _BarraFiltros extends StatelessWidget {
             ),
           ),
 
-          // Boton "Limpiar filtros"
           if (hayFiltros)
             TextButton.icon(
               onPressed: provider.limpiarFiltros,
@@ -292,10 +264,6 @@ class _BarraFiltros extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Estados vacios y de error
-// ---------------------------------------------------------------------------
 
 class _EstadoVacio extends StatelessWidget {
   const _EstadoVacio();
@@ -326,9 +294,8 @@ class _EstadoVacio extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'No hay actividades pendientes con los filtros actuales.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: PlanazoColors.onSurfaceVariant,
-                  ),
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(color: PlanazoColors.onSurfaceVariant),
               textAlign: TextAlign.center,
             ),
           ],
@@ -363,9 +330,8 @@ class _EstadoError extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               mensaje,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: PlanazoColors.onSurfaceVariant,
-                  ),
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(color: PlanazoColors.onSurfaceVariant),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),

@@ -7,7 +7,6 @@ import '../../providers/ubicaciones_provider.dart';
 import '../../widgets/ubicacion_card.dart';
 import 'formulario_ubicacion_screen.dart';
 
-/// Listado de ubicaciones (cuerpo de la pestaña "Ubicaciones").
 class ListadoUbicacionesScreen extends StatelessWidget {
   const ListadoUbicacionesScreen({super.key});
 
@@ -100,20 +99,20 @@ class ListadoUbicacionesScreen extends StatelessWidget {
             child: provider.cargando && ubicaciones.isEmpty
                 ? const Center(child: CircularProgressIndicator())
                 : ubicaciones.isEmpty
-                    ? _EstadoVacio(onCrear: () => _nuevaUbicacion(context))
-                    : ListView.builder(
-                        padding: EdgeInsets.zero,
-                        itemCount: ubicaciones.length,
-                        itemBuilder: (context, index) {
-                          final ubicacion = ubicaciones[index];
-                          return UbicacionCard(
-                            ubicacion: ubicacion,
-                            onEditar: () => _editar(context, ubicacion),
-                            onEliminar: () =>
-                                _confirmarEliminacion(context, ubicacion),
-                          );
-                        },
-                      ),
+                ? _EstadoVacio(onCrear: () => _nuevaUbicacion(context))
+                : ListView.builder(
+                    padding: EdgeInsets.zero,
+                    itemCount: ubicaciones.length,
+                    itemBuilder: (context, index) {
+                      final ubicacion = ubicaciones[index];
+                      return UbicacionCard(
+                        ubicacion: ubicacion,
+                        onEditar: () => _editar(context, ubicacion),
+                        onEliminar: () =>
+                            _confirmarEliminacion(context, ubicacion),
+                      );
+                    },
+                  ),
           ),
         ],
       ),
@@ -150,9 +149,8 @@ class _EstadoVacio extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             'Guarda tus lugares para crear actividades condicionadas por el clima.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: PlanazoColors.onSurfaceVariant,
-                ),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: PlanazoColors.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),

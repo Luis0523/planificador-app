@@ -5,8 +5,6 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../config/constants.dart';
 import '../config/theme.dart';
 
-/// Mini vista previa de un punto en el mapa (no interactiva).
-/// En web o sin API key muestra un marcador de respaldo en su lugar.
 class MiniMapa extends StatelessWidget {
   const MiniMapa({
     super.key,
@@ -55,7 +53,6 @@ class MiniMapa extends StatelessWidget {
       );
     }
 
-    // Respaldo: web / sin API key (evita plataformas nativas en esos casos).
     return Container(
       height: altura,
       decoration: BoxDecoration(
@@ -69,9 +66,8 @@ class MiniMapa extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             '${latitud.toStringAsFixed(4)}, ${longitud.toStringAsFixed(4)}',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: PlanazoColors.onSurfaceVariant,
-                ),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: PlanazoColors.onSurfaceVariant),
           ),
         ],
       ),

@@ -15,28 +15,40 @@ void main() {
 
   tearDown(() => DatabaseHelper.instance.close());
 
-  test('Fase 1: las 5 tablas se crean y el catálogo de condiciones se precarga',
-      () async {
-    final db = await DatabaseHelper.instance.database;
+  test(
+    'Fase 1: las 5 tablas se crean y el catálogo de condiciones se precarga',
+    () async {
+      final db = await DatabaseHelper.instance.database;
 
-    final tablas = await db.query('sqlite_master', columns: ['name']);
-    final nombres = tablas.map((t) => t['name']).toSet();
+      final tablas = await db.query('sqlite_master', columns: ['name']);
+      final nombres = tablas.map((t) => t['name']).toSet();
 
-    expect(nombres, contains(Constants.tableUbicaciones));
-    expect(nombres, contains(Constants.tableActividades));
-    expect(nombres, contains(Constants.tableHistorial));
-    expect(nombres, contains(Constants.tableCondiciones));
-    expect(nombres, contains(Constants.tableActividadCondicion));
+      expect(nombres, contains(Constants.tableUbicaciones));
+      expect(nombres, contains(Constants.tableActividades));
+      expect(nombres, contains(Constants.tableHistorial));
+      expect(nombres, contains(Constants.tableCondiciones));
+      expect(nombres, contains(Constants.tableActividadCondicion));
 
-    final condiciones =
-        await db.query(Constants.tableCondiciones, orderBy: 'id_condicion');
-    expect(condiciones, hasLength(6));
-    expect(condiciones.map((c) => c['nombre']),
-        containsAll(['Soleado', 'Lluvioso', 'Nublado', 'Ventoso', 'Templado', 'Nevado']));
-  });
+      final condiciones = await db.query(
+        Constants.tableCondiciones,
+        orderBy: 'id_condicion',
+      );
+      expect(condiciones, hasLength(6));
+      expect(
+        condiciones.map((c) => c['nombre']),
+        containsAll([
+          'Soleado',
+          'Lluvioso',
+          'Nublado',
+          'Ventoso',
+          'Templado',
+          'Nevado',
+        ]),
+      );
+    },
+  );
 
-  test('Fase 1: insertar ubicación + actividad + condiciones, y borrado en cascada',
-      () async {
+  test('Fase 1: insertar ubicación + actividad + condiciones, y borrado en cascada', () async {
     final db = await DatabaseHelper.instance.database;
 
     final idUbicacion = await db.insert(Constants.tableUbicaciones, {
@@ -61,20 +73,28 @@ void main() {
       'fecha_actualizacion': '2026-08-20T10:05:00',
     });
 
-    // Relación N:M: asociar condiciones deseables
     final idSoleado =
-        (await db.query(Constants.tableCondiciones, where: "nombre = 'Soleado'"))
-            .single['id_condicion'] as int;
+        (await db.query(
+              Constants.tableCondiciones,
+              where: "nombre = 'Soleado'",
+            )).single['id_condicion']
+            as int;
     final idTemplado =
-        (await db.query(Constants.tableCondiciones, where: "nombre = 'Templado'"))
-            .single['id_condicion'] as int;
+        (await db.query(
+              Constants.tableCondiciones,
+              where: "nombre = 'Templado'",
+            )).single['id_condicion']
+            as int;
 
-    await db.insert(Constants.tableActividadCondicion,
-        {'id_actividad': idActividad, 'id_condicion': idSoleado});
-    await db.insert(Constants.tableActividadCondicion,
-        {'id_actividad': idActividad, 'id_condicion': idTemplado});
+    await db.insert(Constants.tableActividadCondicion, {
+      'id_actividad': idActividad,
+      'id_condicion': idSoleado,
+    });
+    await db.insert(Constants.tableActividadCondicion, {
+      'id_actividad': idActividad,
+      'id_condicion': idTemplado,
+    });
 
-    // Historial de la actividad
     await db.insert(Constants.tableHistorial, {
       'id_actividad': idActividad,
       'estado_anterior': 'pendiente',
@@ -83,38 +103,54 @@ void main() {
       'comentario': 'Prueba',
     });
 
-    // Verificar que todo quedó insertado
     expect(
-        await db.query(Constants.tableActividades), hasLength(1),
-        reason: 'la actividad debe existir');
+      await db.query(Constants.tableActividades),
+      hasLength(1),
+      reason: 'la actividad debe existir',
+    );
     expect(
-        await db.query(Constants.tableActividadCondicion), hasLength(2),
-        reason: 'la actividad debe tener 2 condiciones asociadas');
+      await db.query(Constants.tableActividadCondicion),
+      hasLength(2),
+      reason: 'la actividad debe tener 2 condiciones asociadas',
+    );
     expect(
-        await db.query(Constants.tableHistorial), hasLength(1),
-        reason: 'el historial debe tener 1 registro');
+      await db.query(Constants.tableHistorial),
+      hasLength(1),
+      reason: 'el historial debe tener 1 registro',
+    );
 
-    // Borrado en cascada: al borrar la ubicación, la actividad,
-    // sus condiciones asociadas y su historial deben desaparecer.
-    await db.delete(Constants.tableUbicaciones,
-        where: 'id_ubicacion = ?', whereArgs: [idUbicacion]);
+    await db.delete(
+      Constants.tableUbicaciones,
+      where: 'id_ubicacion = ?',
+      whereArgs: [idUbicacion],
+    );
 
     expect(
-        await db.query(Constants.tableActividades), isEmpty,
-        reason: 'ON DELETE CASCADE debe borrar las actividades de la ubicación');
+      await db.query(Constants.tableActividades),
+      isEmpty,
+      reason: 'ON DELETE CASCADE debe borrar las actividades de la ubicación',
+    );
     expect(
-        await db.query(Constants.tableActividadCondicion), isEmpty,
-        reason: 'las condiciones asociadas deben borrarse en cascada');
+      await db.query(Constants.tableActividadCondicion),
+      isEmpty,
+      reason: 'las condiciones asociadas deben borrarse en cascada',
+    );
     expect(
-        await db.query(Constants.tableHistorial), isEmpty,
-        reason: 'el historial debe borrarse en cascada');
+      await db.query(Constants.tableHistorial),
+      isEmpty,
+      reason: 'el historial debe borrarse en cascada',
+    );
   });
 
-  test('Fase 6 (v2): id_usuario es TEXT (el backend usa UUID string)', () async {
-    final db = await DatabaseHelper.instance.database;
-    final columnas =
-        await db.rawQuery('PRAGMA table_info(${Constants.tableUbicaciones})');
-    final idUsuario = columnas.firstWhere((c) => c['name'] == 'id_usuario');
-    expect(idUsuario['type'], 'TEXT');
-  });
+  test(
+    'Fase 6 (v2): id_usuario es TEXT (el backend usa UUID string)',
+    () async {
+      final db = await DatabaseHelper.instance.database;
+      final columnas = await db.rawQuery(
+        'PRAGMA table_info(${Constants.tableUbicaciones})',
+      );
+      final idUsuario = columnas.firstWhere((c) => c['name'] == 'id_usuario');
+      expect(idUsuario['type'], 'TEXT');
+    },
+  );
 }

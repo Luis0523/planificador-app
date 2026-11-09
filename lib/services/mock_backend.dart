@@ -1,7 +1,5 @@
 import '../models/usuario.dart';
 
-/// Backend falso en memoria usado SOLO en las pruebas automáticas.
-/// En la app real `USE_MOCK_BACKEND=false` y se usa el backend de Fly.
 class MockBackend {
   MockBackend._();
   static final MockBackend instance = MockBackend._();
@@ -19,7 +17,6 @@ class MockBackend {
 
   String _usuarioActualId = '1';
 
-  /// Restaura el estado inicial (útil en tests).
   void reset() {
     _usuarios
       ..clear()
@@ -46,8 +43,9 @@ class MockBackend {
   void setUsuarioActualId(String id) => _usuarioActualId = id;
 
   Map<String, String>? buscarPorCorreo(String correo) {
-    final matches =
-        _usuarios.where((u) => u['correo'] == correo.trim()).toList();
+    final matches = _usuarios
+        .where((u) => u['correo'] == correo.trim())
+        .toList();
     return matches.isEmpty ? null : matches.first;
   }
 

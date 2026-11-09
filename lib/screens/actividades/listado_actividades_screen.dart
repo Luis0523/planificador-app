@@ -8,7 +8,6 @@ import '../../providers/ubicaciones_provider.dart';
 import '../../widgets/actividad_card.dart';
 import 'formulario_actividad_screen.dart';
 
-/// Listado de actividades filtrado por ubicación.
 class ListadoActividadesScreen extends StatefulWidget {
   const ListadoActividadesScreen({super.key});
 
@@ -97,7 +96,9 @@ class _ListadoActividadesScreenState extends State<ListadoActividadesScreen> {
       if (context.mounted) {
         messenger.showSnackBar(
           SnackBar(
-            content: Text(ok ? 'Actividad eliminada.' : (provider.error ?? 'Error')),
+            content: Text(
+              ok ? 'Actividad eliminada.' : (provider.error ?? 'Error'),
+            ),
           ),
         );
       }
@@ -155,27 +156,25 @@ class _ListadoActividadesScreenState extends State<ListadoActividadesScreen> {
                   child: _idUbicacion == null
                       ? const SizedBox()
                       : actividades.cargando && actividades.actividades.isEmpty
-                          ? const Center(child: CircularProgressIndicator())
-                          : actividades.actividades.isEmpty
-                              ? _EstadoVacio(onCrear: () => _abrirFormulario())
-                              : ListView.builder(
-                                  padding: const EdgeInsets.only(top: 8),
-                                  itemCount: actividades.actividades.length,
-                                  itemBuilder: (context, index) {
-                                    final a = actividades.actividades[index];
-                                    return ActividadCard(
-                                      actividad: a,
-                                      condiciones: actividades
-                                          .condicionesDeActividad(a.idActividad!),
-                                      ubicacion:
-                                          _ubicacionActual(ubicaciones),
-                                      onEditar: () =>
-                                          _abrirFormulario(actividad: a),
-                                      onEliminar: () =>
-                                          _confirmarEliminacion(a),
-                                    );
-                                  },
-                                ),
+                      ? const Center(child: CircularProgressIndicator())
+                      : actividades.actividades.isEmpty
+                      ? _EstadoVacio(onCrear: () => _abrirFormulario())
+                      : ListView.builder(
+                          padding: const EdgeInsets.only(top: 8),
+                          itemCount: actividades.actividades.length,
+                          itemBuilder: (context, index) {
+                            final a = actividades.actividades[index];
+                            return ActividadCard(
+                              actividad: a,
+                              condiciones: actividades.condicionesDeActividad(
+                                a.idActividad!,
+                              ),
+                              ubicacion: _ubicacionActual(ubicaciones),
+                              onEditar: () => _abrirFormulario(actividad: a),
+                              onEliminar: () => _confirmarEliminacion(a),
+                            );
+                          },
+                        ),
                 ),
               ],
             ),
@@ -213,9 +212,8 @@ class _SinUbicaciones extends StatelessWidget {
             Text(
               'Las actividades se asocian a una ubicación. Crea una en '
               'el módulo de Ubicaciones.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: PlanazoColors.onSurfaceVariant,
-                  ),
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(color: PlanazoColors.onSurfaceVariant),
               textAlign: TextAlign.center,
             ),
           ],
@@ -254,9 +252,8 @@ class _EstadoVacio extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             'Crea tu primera actividad para esta ubicación.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: PlanazoColors.onSurfaceVariant,
-                ),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: PlanazoColors.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),

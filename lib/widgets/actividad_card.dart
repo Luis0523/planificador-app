@@ -7,9 +7,6 @@ import '../models/ubicacion.dart';
 import '../utils/date_helpers.dart';
 import 'mini_mapa.dart';
 
-/// Tarjeta de actividad (estilo Planazo).
-/// Muestra la descripción, fecha/hora, tipo, condiciones y un mini-mapa
-/// con la ubicación del evento (si se conoce la ubicación).
 class ActividadCard extends StatelessWidget {
   const ActividadCard({
     super.key,
@@ -71,10 +68,8 @@ class ActividadCard extends StatelessWidget {
                         Text(
                           '${formatearFechaLegible(fecha)} · '
                           '${actividad.horaInicio}–${actividad.horaFin}',
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: PlanazoColors.onSurfaceVariant,
-                                  ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: PlanazoColors.onSurfaceVariant),
                         ),
                         const SizedBox(height: 8),
                         Wrap(
@@ -94,8 +89,7 @@ class ActividadCard extends StatelessWidget {
                               _Etiqueta(
                                 texto: condicion.nombre,
                                 color: PlanazoColors.secondaryContainer,
-                                colorTexto:
-                                    PlanazoColors.onSecondaryContainer,
+                                colorTexto: PlanazoColors.onSecondaryContainer,
                               ),
                           ],
                         ),
@@ -127,7 +121,9 @@ class ActividadCard extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: PlanazoColors.onPrimary.withValues(alpha: 0.85),
+                          color: PlanazoColors.onPrimary.withValues(
+                            alpha: 0.85,
+                          ),
                           borderRadius: BorderRadius.circular(
                             PlanazoColors.radiusSm,
                           ),
@@ -143,8 +139,7 @@ class ActividadCard extends StatelessWidget {
                             const SizedBox(width: 4),
                             Text(
                               ubicacion!.nombre,
-                              style:
-                                  Theme.of(context).textTheme.labelMedium,
+                              style: Theme.of(context).textTheme.labelMedium,
                             ),
                           ],
                         ),
@@ -183,10 +178,8 @@ class _Etiqueta extends StatelessWidget {
       ),
       child: Text(
         texto,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: colorTexto,
-              fontWeight: FontWeight.w600,
-            ),
+        style: Theme.of(context).textTheme.labelSmall
+            ?.copyWith(color: colorTexto, fontWeight: FontWeight.w600),
       ),
     );
   }

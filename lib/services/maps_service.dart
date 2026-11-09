@@ -2,8 +2,6 @@ import 'package:dio/dio.dart';
 
 import '../config/constants.dart';
 
-/// Consulta la API de Google Maps para obtener la dirección de un punto.
-/// Se llama directo desde el teléfono, nunca desde el backend.
 class MapsService {
   MapsService._();
   static final MapsService instance = MapsService._();
@@ -15,8 +13,6 @@ class MapsService {
     ),
   );
 
-  /// Dirección aproximada de una coordenada (Geocoding inverso).
-  /// Devuelve null si no hay API key o si Google no encuentra la dirección.
   Future<String?> geocodificarInverso(double latitud, double longitud) async {
     if (Constants.googleMapsApiKey.isEmpty) return null;
 

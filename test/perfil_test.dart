@@ -12,9 +12,10 @@ Future<void> _iniciarApp(WidgetTester tester) async {
 
 Future<void> _login(WidgetTester tester) async {
   await tester.enterText(
-      find.byKey(const Key('login_correo')), 'demo@planificador.com');
-  await tester.enterText(
-      find.byKey(const Key('login_contrasena')), '123456');
+    find.byKey(const Key('login_correo')),
+    'demo@planificador.com',
+  );
+  await tester.enterText(find.byKey(const Key('login_contrasena')), '123456');
   await tester.tap(find.text('Iniciar sesión'));
   await tester.pumpAndSettle();
 }
@@ -32,8 +33,9 @@ void main() {
     MockBackend.instance.reset();
   });
 
-  testWidgets('el perfil muestra los datos del usuario logueado',
-      (tester) async {
+  testWidgets('el perfil muestra los datos del usuario logueado', (
+    tester,
+  ) async {
     await _iniciarApp(tester);
     await _login(tester);
     await _abrirPerfil(tester);
@@ -41,58 +43,69 @@ void main() {
     expect(find.text('Alumno Demo'), findsWidgets);
     expect(find.text('demo@planificador.com'), findsWidgets);
 
-    final nombre = tester
-        .widget<TextFormField>(find.byKey(const Key('perfil_nombre_completo')));
+    final nombre = tester.widget<TextFormField>(
+      find.byKey(const Key('perfil_nombre_completo')),
+    );
     expect(nombre.controller?.text, 'Alumno Demo');
 
-    final telefono = tester
-        .widget<TextFormField>(find.byKey(const Key('perfil_telefono')));
+    final telefono = tester.widget<TextFormField>(
+      find.byKey(const Key('perfil_telefono')),
+    );
     expect(telefono.controller?.text, '5551234567');
 
-    // nombreUsuario, correo y contraseña son de solo lectura.
     expect(
-        tester
-            .widget<TextFormField>(find.byKey(const Key('perfil_nombre_usuario')))
-            .enabled,
-        isFalse);
+      tester
+          .widget<TextFormField>(find.byKey(const Key('perfil_nombre_usuario')))
+          .enabled,
+      isFalse,
+    );
     expect(
-        tester
-            .widget<TextFormField>(find.byKey(const Key('perfil_correo')))
-            .enabled,
-        isFalse);
+      tester
+          .widget<TextFormField>(find.byKey(const Key('perfil_correo')))
+          .enabled,
+      isFalse,
+    );
     expect(
-        tester
-            .widget<TextFormField>(find.byKey(const Key('perfil_contrasena')))
-            .enabled,
-        isFalse);
+      tester
+          .widget<TextFormField>(find.byKey(const Key('perfil_contrasena')))
+          .enabled,
+      isFalse,
+    );
   });
 
-  testWidgets('editar nombre y teléfono persiste al recargar la pantalla',
-      (tester) async {
+  testWidgets('editar nombre y teléfono persiste al recargar la pantalla', (
+    tester,
+  ) async {
     await _iniciarApp(tester);
     await _login(tester);
     await _abrirPerfil(tester);
 
     await tester.enterText(
-        find.byKey(const Key('perfil_nombre_completo')), 'Ana Pérez');
-    await tester.enterText(find.byKey(const Key('perfil_telefono')), '5550002222');
+      find.byKey(const Key('perfil_nombre_completo')),
+      'Ana Pérez',
+    );
+    await tester.enterText(
+      find.byKey(const Key('perfil_telefono')),
+      '5550002222',
+    );
     await tester.ensureVisible(find.byKey(const Key('perfil_guardar')));
     await tester.tap(find.byKey(const Key('perfil_guardar')));
     await tester.pumpAndSettle();
 
     expect(find.text('Perfil actualizado correctamente.'), findsOneWidget);
 
-    // Volver a entrar al perfil: el cambio persiste.
     await tester.pageBack();
     await tester.pumpAndSettle();
     await _abrirPerfil(tester);
 
-    final nombre = tester
-        .widget<TextFormField>(find.byKey(const Key('perfil_nombre_completo')));
+    final nombre = tester.widget<TextFormField>(
+      find.byKey(const Key('perfil_nombre_completo')),
+    );
     expect(nombre.controller?.text, 'Ana Pérez');
 
-    final telefono = tester
-        .widget<TextFormField>(find.byKey(const Key('perfil_telefono')));
+    final telefono = tester.widget<TextFormField>(
+      find.byKey(const Key('perfil_telefono')),
+    );
     expect(telefono.controller?.text, '5550002222');
   });
 

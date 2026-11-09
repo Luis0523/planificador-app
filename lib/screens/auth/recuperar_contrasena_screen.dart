@@ -65,14 +65,18 @@ class _RecuperarContrasenaScreenState extends State<RecuperarContrasenaScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(Icons.lock_reset, size: 64, color: PlanazoColors.primary),
+                const Icon(
+                  Icons.lock_reset,
+                  size: 64,
+                  color: PlanazoColors.primary,
+                ),
                 const SizedBox(height: 12),
                 Text(
                   'Planazo',
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        color: PlanazoColors.primary,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    color: PlanazoColors.primary,
+                    fontWeight: FontWeight.w800,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),

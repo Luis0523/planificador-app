@@ -26,11 +26,11 @@ class HistorialActividad {
       );
 
   Map<String, Object?> toMap() => {
-        if (idHistorial != null) 'id_historial': idHistorial,
-        'id_actividad': idActividad,
-        'estado_anterior': estadoAnterior,
-        'estado_nuevo': estadoNuevo,
-        'fecha_cambio': fechaCambio,
-        'comentario': comentario,
-      };
+    if (idHistorial != null) 'id_historial': idHistorial,
+    'id_actividad': idActividad,
+    'estado_anterior': estadoAnterior,
+    'estado_nuevo': estadoNuevo,
+    'fecha_cambio': fechaCambio,
+    'comentario': comentario,
+  };
 }

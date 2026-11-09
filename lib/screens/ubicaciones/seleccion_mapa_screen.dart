@@ -8,11 +8,6 @@ import '../../config/constants.dart';
 import '../../config/theme.dart';
 import '../../services/maps_service.dart';
 
-/// Selector de punto en el mapa.
-/// Con `GOOGLE_MAPS_API_KEY` configurada (y en Android/iOS) muestra un
-/// GoogleMap real donde se toca para elegir el punto. En web o sin clave
-/// cae a un formulario de coordenadas.
-/// Devuelve una tupla (latitud, longitud) vía `Navigator.pop`.
 class SeleccionMapaScreen extends StatefulWidget {
   const SeleccionMapaScreen({
     super.key,
@@ -60,8 +55,6 @@ class _SeleccionMapaScreenState extends State<SeleccionMapaScreen> {
     super.dispose();
   }
 
-  /// Intenta iniciar el mapa en la ubicación actual del dispositivo
-  /// (en vez de la coordenada por defecto).
   Future<void> _posicionarEnGps() async {
     Position? pos;
     try {
@@ -111,8 +104,10 @@ class _SeleccionMapaScreenState extends State<SeleccionMapaScreen> {
 
   Future<void> _buscarDireccion() async {
     setState(() => _buscandoDireccion = true);
-    final direccion =
-        await MapsService.instance.geocodificarInverso(_latitud, _longitud);
+    final direccion = await MapsService.instance.geocodificarInverso(
+      _latitud,
+      _longitud,
+    );
     if (!mounted) return;
     setState(() {
       _direccion = direccion;
@@ -213,13 +208,12 @@ class _SeleccionMapaScreenState extends State<SeleccionMapaScreen> {
                   child: Text(
                     kIsWeb
                         ? 'El mapa no está disponible en web. Ingresa las '
-                            'coordenadas del punto.'
+                              'coordenadas del punto.'
                         : 'El mapa visual estará disponible cuando se configure '
-                            'la API key de Google Maps. Por ahora ingresa las '
-                            'coordenadas del punto.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: PlanazoColors.onPrimaryContainer,
-                        ),
+                              'la API key de Google Maps. Por ahora ingresa las '
+                              'coordenadas del punto.',
+                    style: Theme.of(context).textTheme.bodyMedium
+                        ?.copyWith(color: PlanazoColors.onPrimaryContainer),
                   ),
                 ),
               ],
@@ -287,18 +281,15 @@ class _PanelInferior extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
       decoration: const BoxDecoration(
         color: PlanazoColors.surfaceContainerLow,
-        border: Border(
-          top: BorderSide(color: PlanazoColors.outlineVariant),
-        ),
+        border: Border(top: BorderSide(color: PlanazoColors.outlineVariant)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
             '${latitud.toStringAsFixed(6)}, ${longitud.toStringAsFixed(6)}',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: PlanazoColors.onSurfaceVariant,
-                ),
+            style: Theme.of(context).textTheme.labelLarge
+                ?.copyWith(color: PlanazoColors.onSurfaceVariant),
           ),
           if (mostrarDireccion) ...[
             const SizedBox(height: 4),

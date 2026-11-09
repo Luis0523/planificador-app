@@ -41,10 +41,6 @@ class PlanificadorApp extends StatelessWidget {
   }
 }
 
-/// Decide qué pantalla mostrar según el estado de autenticación:
-/// - Sin sesión -> login
-/// - Login con contraseña temporal -> forzar cambio de contraseña
-/// - Sesión activa -> Home
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
 
@@ -54,9 +50,7 @@ class AuthGate extends StatelessWidget {
 
     switch (auth.status) {
       case AuthStatus.desconocido:
-        return const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        );
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
       case AuthStatus.noAutenticado:
         return const LoginScreen();
       case AuthStatus.requiereCambio:

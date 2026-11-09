@@ -11,8 +11,6 @@ import '../../utils/date_helpers.dart';
 import '../../utils/validators.dart';
 import 'seleccion_mapa_screen.dart';
 
-/// Formulario de ubicación: sirve para crear y editar.
-/// Las coordenadas NO se escriben a mano: se eligen con GPS o en el mapa.
 class FormularioUbicacionScreen extends StatefulWidget {
   const FormularioUbicacionScreen({super.key, this.ubicacion});
 
@@ -81,11 +79,15 @@ class _FormularioUbicacionScreenState extends State<FormularioUbicacionScreen> {
       if (!mounted) return;
       _setCoordenadas(pos.latitude, pos.longitude);
 
-      final direccion = await MapsService.instance
-          .geocodificarInverso(pos.latitude, pos.longitude);
+      final direccion = await MapsService.instance.geocodificarInverso(
+        pos.latitude,
+        pos.longitude,
+      );
       if (direccion != null) _direccionCtrl.text = direccion;
     } catch (_) {
-      _avisar('No se pudo obtener tu ubicación. Revisa el GPS e intenta de nuevo.');
+      _avisar(
+        'No se pudo obtener tu ubicación. Revisa el GPS e intenta de nuevo.',
+      );
     } finally {
       if (mounted) setState(() => _buscandoGps = false);
     }
@@ -93,9 +95,8 @@ class _FormularioUbicacionScreenState extends State<FormularioUbicacionScreen> {
 
   void _avisar(String mensaje) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(mensaje)),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(mensaje)));
   }
 
   Future<void> _seleccionarEnMapa() async {
@@ -110,9 +111,10 @@ class _FormularioUbicacionScreenState extends State<FormularioUbicacionScreen> {
     if (resultado == null || !mounted) return;
     _setCoordenadas(resultado.$1, resultado.$2);
     _direccionCtrl.clear();
-    // Geocodificación inversa del punto elegido para autocompletar la dirección.
-    final direccion = await MapsService.instance
-        .geocodificarInverso(resultado.$1, resultado.$2);
+    final direccion = await MapsService.instance.geocodificarInverso(
+      resultado.$1,
+      resultado.$2,
+    );
     if (direccion != null && mounted) _direccionCtrl.text = direccion;
   }
 
@@ -224,7 +226,9 @@ class _FormularioUbicacionScreenState extends State<FormularioUbicacionScreen> {
                             color: Colors.white,
                           ),
                         )
-                      : Text(_editando ? 'Guardar cambios' : 'Guardar ubicación'),
+                      : Text(
+                          _editando ? 'Guardar cambios' : 'Guardar ubicación',
+                        ),
                 ),
               ],
             ),
@@ -235,8 +239,6 @@ class _FormularioUbicacionScreenState extends State<FormularioUbicacionScreen> {
   }
 }
 
-/// Zona para elegir el punto: botones GPS/mapa y, una vez elegido,
-/// un resumen visual del lugar (en vez de pedir coordenadas a mano).
 class _SelectorPunto extends StatelessWidget {
   const _SelectorPunto({
     required this.tienePunto,
@@ -307,9 +309,8 @@ class _SelectorPunto extends StatelessWidget {
                   child: Text(
                     'Punto seleccionado: '
                     '${latitud!.toStringAsFixed(4)}, ${longitud!.toStringAsFixed(4)}',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: PlanazoColors.onPrimaryContainer,
-                        ),
+                    style: Theme.of(context).textTheme.bodyMedium
+                        ?.copyWith(color: PlanazoColors.onPrimaryContainer),
                   ),
                 ),
               ],
@@ -335,9 +336,8 @@ class _SelectorPunto extends StatelessWidget {
                   child: Text(
                     'Elige el lugar con "Usar mi ubicación" o '
                     '"Seleccionar en el mapa". No hace falta escribir coordenadas.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: PlanazoColors.onSurfaceVariant,
-                        ),
+                    style: Theme.of(context).textTheme.bodyMedium
+                        ?.copyWith(color: PlanazoColors.onSurfaceVariant),
                   ),
                 ),
               ],

@@ -25,19 +25,12 @@ class LoginResult {
   });
 }
 
-/// Servicio de autenticación: login, registro, recuperación y cambio de contraseña.
-///
-/// Con `Constants.useMockBackend == true` responde con datos simulados
-/// (útil en tests y sin backend). Con el backend real desplagado, la app
-/// apunta a `API_BASE_URL` y `useMockBackend` se apaga vía .env.
 class AuthService {
   AuthService._();
   static final AuthService instance = AuthService._();
 
   final ApiService _api = ApiService.instance;
   bool get _usarMock => Constants.useMockBackend;
-
-  // ---- Login ----
 
   Future<LoginResult> login(String correo, String contrasena) async {
     if (_usarMock) return _mockLogin(correo, contrasena);
@@ -58,8 +51,6 @@ class AuthService {
     }
   }
 
-  // ---- Registro ----
-
   Future<void> register({
     required String nombreCompleto,
     required String nombreUsuario,
@@ -79,36 +70,38 @@ class AuthService {
     }
 
     try {
-      await _api.dio.post(Constants.authRegister, data: {
-        'nombreCompleto': nombreCompleto,
-        'nombreUsuario': nombreUsuario,
-        'correo': correo,
-        'telefono': telefono,
-        'contrasena': contrasena,
-      });
+      await _api.dio.post(
+        Constants.authRegister,
+        data: {
+          'nombreCompleto': nombreCompleto,
+          'nombreUsuario': nombreUsuario,
+          'correo': correo,
+          'telefono': telefono,
+          'contrasena': contrasena,
+        },
+      );
     } on DioException catch (e) {
       throw AuthException(ApiService.mensajeErrorDio(e));
     }
   }
-
-  // ---- Recuperación de contraseña ----
 
   Future<void> forgotPassword(String correo) async {
     if (_usarMock) {
       if (correo.trim().isEmpty) {
         throw AuthException('El correo es obligatorio');
       }
-      return; // En pruebas se simula que el correo siempre se envía.
+      return;
     }
 
     try {
-      await _api.dio.post(Constants.authForgotPassword, data: {'correo': correo});
+      await _api.dio.post(
+        Constants.authForgotPassword,
+        data: {'correo': correo},
+      );
     } on DioException catch (e) {
       throw AuthException(ApiService.mensajeErrorDio(e));
     }
   }
-
-  // ---- Cambio de contraseña (requiere JWT; doble confirmación) ----
 
   Future<void> changePassword(
     String nuevaContrasena,
@@ -118,7 +111,7 @@ class AuthService {
       if (nuevaContrasena.length < 8) {
         throw AuthException('La contraseña debe tener al menos 8 caracteres');
       }
-      return; // En pruebas se simula que el cambio siempre funciona.
+      return;
     }
 
     try {
@@ -134,8 +127,6 @@ class AuthService {
     }
   }
 
-  // ---- Modo de pruebas (sin servidor) ----
-
   LoginResult _mockLogin(String correo, String contrasena) {
     final backend = MockBackend.instance;
     final usuario = backend.buscarPorCorreo(correo);
@@ -143,7 +134,6 @@ class AuthService {
       throw AuthException('Credenciales incorrectas');
     }
 
-    // Contraseña temporal simulada: obliga a cambiar la contraseña.
     final requiere = contrasena == 'temporal123';
     if (contrasena != usuario['contrasena'] && !requiere) {
       throw AuthException('Credenciales incorrectas');
@@ -174,7 +164,9 @@ class AuthService {
     final backend = MockBackend.instance;
     if (backend.buscarPorCorreo(correo) != null ||
         backend.buscarPorNombreUsuario(nombreUsuario) != null) {
-      throw AuthException('El correo o el nombre de usuario ya están registrados');
+      throw AuthException(
+        'El correo o el nombre de usuario ya están registrados',
+      );
     }
     backend.registrar(
       nombreCompleto: nombreCompleto,
@@ -185,5 +177,3 @@ class AuthService {
     );
   }
 }
-
-

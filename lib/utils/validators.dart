@@ -26,8 +26,6 @@ String? validarContrasena(String? value) {
   return null;
 }
 
-/// Para el login no se exige longitud mínima (solo que no esté vacía);
-/// la política de ≥8 aplica al crear/cambiar contraseña.
 String? validarContrasenaLogin(String? value) {
   if (value == null || value.isEmpty) {
     return 'La contraseña es obligatoria';

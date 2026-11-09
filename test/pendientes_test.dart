@@ -7,10 +7,6 @@ import 'package:planificador_actividades/models/actividad.dart';
 import 'package:planificador_actividades/services/actividad_service.dart';
 import 'package:planificador_actividades/services/probabilidad_service.dart';
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 String _ahora() => DateTime.now().toIso8601String();
 
 Actividad _actividad({
@@ -21,22 +17,17 @@ Actividad _actividad({
   String horaFin = '10:00',
   String tipo = 'aire_libre',
   String estado = 'pendiente',
-}) =>
-    Actividad(
-      idUbicacion: idUbicacion,
-      descripcion: descripcion,
-      fecha: fecha,
-      horaInicio: horaInicio,
-      horaFin: horaFin,
-      tipoActividad: tipo,
-      estado: estado,
-      fechaCreacion: _ahora(),
-      fechaActualizacion: _ahora(),
-    );
-
-// ---------------------------------------------------------------------------
-// Setup / teardown
-// ---------------------------------------------------------------------------
+}) => Actividad(
+  idUbicacion: idUbicacion,
+  descripcion: descripcion,
+  fecha: fecha,
+  horaInicio: horaInicio,
+  horaFin: horaFin,
+  tipoActividad: tipo,
+  estado: estado,
+  fechaCreacion: _ahora(),
+  fechaActualizacion: _ahora(),
+);
 
 void main() {
   setUpAll(sqfliteFfiInit);
@@ -48,10 +39,6 @@ void main() {
   });
 
   tearDown(() => DatabaseHelper.instance.close());
-
-  // =========================================================================
-  // Grupo 1: ProbabilidadService — logica pura, sin BD
-  // =========================================================================
 
   group('ProbabilidadService', () {
     final service = ProbabilidadService.instance;
@@ -156,16 +143,11 @@ void main() {
     });
   });
 
-  // =========================================================================
-  // Grupo 2: marcarFinalizada + reagendar con historial
-  // =========================================================================
-
   group('ActividadService historial', () {
     test('marcarFinalizada actualiza estado e inserta en historial', () async {
       final db = await DatabaseHelper.instance.database;
       final service = ActividadService.instance;
 
-      // Crear ubicacion
       final idUb = await db.insert(Constants.tableUbicaciones, {
         'id_usuario': 'u1',
         'nombre': 'Ubi',
@@ -194,46 +176,49 @@ void main() {
       expect(historial.first.estadoNuevo, Constants.estadoFinalizada);
     });
 
-    test('reagendar actualiza fecha/horas/estado e inserta en historial', () async {
-      final db = await DatabaseHelper.instance.database;
-      final service = ActividadService.instance;
+    test(
+      'reagendar actualiza fecha/horas/estado e inserta en historial',
+      () async {
+        final db = await DatabaseHelper.instance.database;
+        final service = ActividadService.instance;
 
-      final idUb = await db.insert(Constants.tableUbicaciones, {
-        'id_usuario': 'u1',
-        'nombre': 'Ubi',
-        'latitud': 14.0,
-        'longitud': -90.0,
-        'fecha_creacion': _ahora(),
-        'fecha_actualizacion': _ahora(),
-      });
+        final idUb = await db.insert(Constants.tableUbicaciones, {
+          'id_usuario': 'u1',
+          'nombre': 'Ubi',
+          'latitud': 14.0,
+          'longitud': -90.0,
+          'fecha_creacion': _ahora(),
+          'fecha_actualizacion': _ahora(),
+        });
 
-      final idAct = await service.crear(_actividad(idUbicacion: idUb));
-      final actividad = (await service.listarPorUbicacion(idUb))
-          .firstWhere((a) => a.idActividad == idAct);
+        final idAct = await service.crear(_actividad(idUbicacion: idUb));
+        final actividad = (await service.listarPorUbicacion(idUb))
+            .firstWhere((a) => a.idActividad == idAct);
 
-      await service.reagendar(
-        actividad,
-        nuevaFecha: '2099-03-20',
-        nuevaHoraInicio: '14:00',
-        nuevaHoraFin: '15:30',
-      );
+        await service.reagendar(
+          actividad,
+          nuevaFecha: '2099-03-20',
+          nuevaHoraInicio: '14:00',
+          nuevaHoraFin: '15:30',
+        );
 
-      final filas = await db.query(
-        Constants.tableActividades,
-        where: 'id_actividad = ?',
-        whereArgs: [idAct],
-      );
-      expect(filas.first['fecha'], '2099-03-20');
-      expect(filas.first['hora_inicio'], '14:00');
-      expect(filas.first['hora_fin'], '15:30');
-      expect(filas.first['estado'], Constants.estadoReagendada);
+        final filas = await db.query(
+          Constants.tableActividades,
+          where: 'id_actividad = ?',
+          whereArgs: [idAct],
+        );
+        expect(filas.first['fecha'], '2099-03-20');
+        expect(filas.first['hora_inicio'], '14:00');
+        expect(filas.first['hora_fin'], '15:30');
+        expect(filas.first['estado'], Constants.estadoReagendada);
 
-      final historial = await service.listarHistorial(idAct);
-      expect(historial, hasLength(1));
-      expect(historial.first.estadoAnterior, Constants.estadoPendiente);
-      expect(historial.first.estadoNuevo, Constants.estadoReagendada);
-      expect(historial.first.comentario, isNotNull);
-    });
+        final historial = await service.listarHistorial(idAct);
+        expect(historial, hasLength(1));
+        expect(historial.first.estadoAnterior, Constants.estadoPendiente);
+        expect(historial.first.estadoNuevo, Constants.estadoReagendada);
+        expect(historial.first.comentario, isNotNull);
+      },
+    );
 
     test('historial acumula cambios en orden descendente', () async {
       final db = await DatabaseHelper.instance.database;
@@ -252,7 +237,6 @@ void main() {
       var actividad = (await service.listarPorUbicacion(idUb))
           .firstWhere((a) => a.idActividad == idAct);
 
-      // Primero reagendar
       await service.reagendar(
         actividad,
         nuevaFecha: '2099-02-01',
@@ -260,24 +244,17 @@ void main() {
         nuevaHoraFin: '11:00',
       );
 
-      // Recargar actividad con estado actualizado
       actividad = (await service.listarPorUbicacion(idUb))
           .firstWhere((a) => a.idActividad == idAct);
 
-      // Luego finalizar
       await service.marcarFinalizada(actividad);
 
       final historial = await service.listarHistorial(idAct);
       expect(historial, hasLength(2));
-      // Mas reciente primero (DESC)
       expect(historial.first.estadoNuevo, Constants.estadoFinalizada);
       expect(historial.last.estadoNuevo, Constants.estadoReagendada);
     });
   });
-
-  // =========================================================================
-  // Grupo 3: listarPendientes
-  // =========================================================================
 
   group('ActividadService.listarPendientes', () {
     test('solo devuelve actividades pendiente y reagendada', () async {
@@ -293,16 +270,34 @@ void main() {
         'fecha_actualizacion': _ahora(),
       });
 
-      await service.crear(_actividad(idUbicacion: idUb, descripcion: 'Pendiente', estado: 'pendiente'));
-      await service.crear(_actividad(idUbicacion: idUb, descripcion: 'Reagendada', estado: 'reagendada'));
-      await service.crear(_actividad(idUbicacion: idUb, descripcion: 'Finalizada', estado: 'finalizada'));
+      await service.crear(
+        _actividad(
+          idUbicacion: idUb,
+          descripcion: 'Pendiente',
+          estado: 'pendiente',
+        ),
+      );
+      await service.crear(
+        _actividad(
+          idUbicacion: idUb,
+          descripcion: 'Reagendada',
+          estado: 'reagendada',
+        ),
+      );
+      await service.crear(
+        _actividad(
+          idUbicacion: idUb,
+          descripcion: 'Finalizada',
+          estado: 'finalizada',
+        ),
+      );
 
       final pendientes = await service.listarPendientes([idUb]);
       expect(pendientes, hasLength(2));
-      expect(
-        pendientes.map((a) => a.descripcion).toSet(),
-        {'Pendiente', 'Reagendada'},
-      );
+      expect(pendientes.map((a) => a.descripcion).toSet(), {
+        'Pendiente',
+        'Reagendada',
+      });
     });
 
     test('devuelve vacio si no hay ubicaciones', () async {
@@ -323,16 +318,20 @@ void main() {
         'fecha_actualizacion': _ahora(),
       });
 
-      await service.crear(_actividad(
-        idUbicacion: idUb,
-        descripcion: 'Pasada',
-        fecha: '2000-01-01',
-      ));
-      await service.crear(_actividad(
-        idUbicacion: idUb,
-        descripcion: 'Futura',
-        fecha: '2099-01-15',
-      ));
+      await service.crear(
+        _actividad(
+          idUbicacion: idUb,
+          descripcion: 'Pasada',
+          fecha: '2000-01-01',
+        ),
+      );
+      await service.crear(
+        _actividad(
+          idUbicacion: idUb,
+          descripcion: 'Futura',
+          fecha: '2099-01-15',
+        ),
+      );
 
       final pendientes = await service.listarPendientes([idUb]);
       expect(pendientes.map((a) => a.descripcion), ['Futura']);
@@ -351,8 +350,12 @@ void main() {
         'fecha_actualizacion': _ahora(),
       });
 
-      await service.crear(_actividad(idUbicacion: idUb, descripcion: 'A', estado: 'finalizada'));
-      await service.crear(_actividad(idUbicacion: idUb, descripcion: 'B', estado: 'finalizada'));
+      await service.crear(
+        _actividad(idUbicacion: idUb, descripcion: 'A', estado: 'finalizada'),
+      );
+      await service.crear(
+        _actividad(idUbicacion: idUb, descripcion: 'B', estado: 'finalizada'),
+      );
 
       final pendientes = await service.listarPendientes([idUb]);
       expect(pendientes, isEmpty);
